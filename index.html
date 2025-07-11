@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>25‑Minute Online Timer</title>
+  <meta name="description" content="Simple 25‑minute Pomodoro‑style timer.">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:sans-serif;display:flex;flex-direction:column;
+         justify-content:center;align-items:center;height:100vh;margin:0}
+    h1{font-size:4rem;margin:0}
+    button{padding:.8rem 1.6rem;font-size:1.1rem;border:none;border-radius:6px;
+           cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);}
+  </style>
+</head>
+<body>
+  <h1 id="display">25:00</h1>
+  <button id="start">Start</button>
+<script>
+  const display=document.getElementById('display');
+  const btn=document.getElementById('start');
+  let seconds=25*60, timer, running=false;
+  function tick(){
+    if(seconds<=0){clearInterval(timer);btn.textContent='Done';return;}
+    seconds--; const m=Math.floor(seconds/60), s=seconds%60;
+    display.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  btn.onclick=()=>{ if(running) return; running=true; btn.textContent='Running…'; tick();
+    timer=setInterval(tick,1000);};// 1‑sec loop
+</script>
+</body>
+</html>
