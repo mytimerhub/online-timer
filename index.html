@@ -19,7 +19,7 @@
 <script>
  // ---- Defensive: remove known overlay from Profitl extension ----
  (function(){const el=document.getElementById('profitl-root');if(el) el.remove();document.body.classList.remove('profitl-collapsed');})();
- const DURATION = 5*60;           // 5 minutes in seconds
+ const DURATION = 5;           // 5 minutes in seconds
  let seconds = DURATION;
  let timer   = null;
  let state   = 'idle';            // idle | running | paused
