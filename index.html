@@ -7,48 +7,46 @@
 <style>
   body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}
   h1{font-size:8rem;margin:0;letter-spacing:1px}
-  button{padding:1rem 2rem;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.5rem}
+  button{padding:1rem 2rem;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.2rem}
+  #sound{font-size:1rem;background:#f4f4f4}
 </style>
 </head><body>
   <h1 id="display">05:00</h1>
   <button id="ctrl">Start</button>
+  <button id="sound">🔔 Sound On</button>
+  <audio id="beep" src="ding.mp3" preload="auto"></audio>
 <script>
-  const DURATION = 5*60; // seconds
-  let seconds = DURATION;
-  let timer   = null;
-  let running = false;   // true when ticking
-  let paused  = false;   // true when paused
+  const DURATION = 5*60;
+  let seconds = DURATION, timer=null, state='idle'; // idle | running | paused
+  let audioCtx=null, beepBuf=null, soundOn=true;
 
-  const display = document.getElementById('display');
-  const btn     = document.getElementById('ctrl');
+  const display=document.getElementById('display'), btn=document.getElementById('ctrl'), sndBtn=document.getElementById('sound');
 
-  function fmt(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
-  function paint(){display.textContent = fmt(seconds);}  paint();
+  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  const paint=()=>display.textContent=fmt(seconds); paint();
 
-  function tick(){
-    if(seconds<=0){ clearInterval(timer); running=false; seconds=DURATION; paint(); btn.textContent='Start'; return; }
-    seconds--; paint();
+  async function initAudio(){
+    if(audioCtx) return;
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const resp=await fetch('ding.mp3');
+    const buf=await resp.arrayBuffer();
+    beepBuf=await audioCtx.decodeAudioData(buf);
   }
-
-  btn.onclick = () => {
-    if(!running){                      // ▶️ Start (or Restart after finish)
-      seconds = DURATION;              // always start from 5:00
-      paint();
-      timer   = setInterval(tick,1000);
-      running = true;  paused = false;
-      btn.textContent = 'Pause';
-      return;
-    }
-    // running == true
-    if(!paused){                       // ⏸ Pause
-      clearInterval(timer);
-      paused = true;
-      btn.textContent = 'Resume';
-    } else {                           // ▶︎ Resume
-      timer = setInterval(tick,1000);
-      paused = false;
-      btn.textContent = 'Pause';
-    }
+  function playBeep(){
+    if(!soundOn||!beepBuf) return;
+    const src=audioCtx.createBufferSource();
+    src.buffer=beepBuf; src.connect(audioCtx.destination); src.start();
+  }
+  function tick(){
+    if(seconds<=0){clearInterval(timer);playBeep();state='idle';btn.textContent='Restart';return;}
+    seconds--;paint();
+  }
+  btn.onclick=async()=>{
+    if(!audioCtx) await initAudio();
+    if(state==='idle'){seconds=DURATION;paint();timer=setInterval(tick,1000);state='running';btn.textContent='Pause';return;}
+    if(state==='running'){clearInterval(timer);state='paused';btn.textContent='Resume';return;}
+    if(state==='paused'){timer=setInterval(tick,1000);state='running';btn.textContent='Pause';}
   };
+  sndBtn.onclick=()=>{soundOn=!soundOn;sndBtn.textContent=soundOn?'🔔 Sound On':'🔕 Sound Off';};
 </script>
 </body></html>
