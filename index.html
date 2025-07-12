@@ -13,12 +13,12 @@
   #sound.off {background:#f4f4f4}
 </style>
 </head><body>
-  <h1 id="display">05:00</h1>
+  <h1 id="display">00:05</h1>
   <button id="ctrl">Start</button>
   <button id="sound" class="on">✅ Sound On</button>
   <audio id="beep" src="ding.mp3" preload="auto"></audio>
 <script>
-  const DURATION = 5*60;
+  const DURATION = 5;
   let seconds = DURATION, timer=null, state='idle'; // idle | running | paused
   let audioCtx=null, beepBuf=null, soundOn=true;
   const display=document.getElementById('display');
