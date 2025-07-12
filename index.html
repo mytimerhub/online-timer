@@ -1,1 +1,54 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>5‑Minute Timer</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}h1{font-size:4rem;margin:0}button{padding:.8rem 1.6rem;font-size:1.1rem;border:none;border-radius:6px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);}</style></head><body><h1 id="display">05:00</h1><button id="start">Start</button><script>const d=document.getElementById('display'),b=document.getElementById('start');let s=5*60,t,r=false;function tick(){if(s<=0){clearInterval(t);b.textContent='Done';return;}s--;d.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}b.onclick=()=>{if(r)return;r=true;b.textContent='Running…';tick();t=setInterval(tick,1000);};</script></body></html>
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>5‑Minute Timer – Free Online Countdown | MyTimerHub</title>
+<meta name="description" content="Start a 5‑minute online countdown timer that works on any device. One click to start, pause, resume, or restart.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}
+  h1{font-size:8rem;margin:0;letter-spacing:1px}
+  button{padding:1rem 2rem;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.5rem}
+</style>
+</head><body>
+  <h1 id="display">05:00</h1>
+  <button id="ctrl">Start</button>
+<script>
+  const DURATION = 5*60; // seconds
+  let seconds = DURATION;
+  let timer   = null;
+  let running = false;   // true when ticking
+  let paused  = false;   // true when paused
+
+  const display = document.getElementById('display');
+  const btn     = document.getElementById('ctrl');
+
+  function fmt(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+  function paint(){display.textContent = fmt(seconds);}  paint();
+
+  function tick(){
+    if(seconds<=0){ clearInterval(timer); running=false; seconds=DURATION; paint(); btn.textContent='Start'; return; }
+    seconds--; paint();
+  }
+
+  btn.onclick = () => {
+    if(!running){                      // ▶️ Start (or Restart after finish)
+      seconds = DURATION;              // always start from 5:00
+      paint();
+      timer   = setInterval(tick,1000);
+      running = true;  paused = false;
+      btn.textContent = 'Pause';
+      return;
+    }
+    // running == true
+    if(!paused){                       // ⏸ Pause
+      clearInterval(timer);
+      paused = true;
+      btn.textContent = 'Resume';
+    } else {                           // ▶︎ Resume
+      timer = setInterval(tick,1000);
+      paused = false;
+      btn.textContent = 'Pause';
+    }
+  };
+</script>
+</body></html>
