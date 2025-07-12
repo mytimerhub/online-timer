@@ -16,7 +16,7 @@
   <button id="sound">🔔 Sound On</button>
   <audio id="beep" src="ding.mp3" preload="auto"></audio>
 <script>
-  const DURATION = 5*60;
+  const DURATION = 1*60;
   let seconds = DURATION, timer=null, state='idle'; // idle | running | paused
   let audioCtx=null, beepBuf=null, soundOn=true;
 
