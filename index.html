@@ -13,7 +13,7 @@
   #sound.off {background:#f4f4f4}
 </style>
 </head><body>
-  <h1 id="display">05:00</h1>
+  <h1 id="display">00:05</h1>
   <button id="ctrl">Start</button>
   <button id="sound" class="on">✅ Sound On</button>
 <script>
@@ -21,7 +21,7 @@
 (function(){const el=document.getElementById('profitl-root');if(el) el.remove();document.body.classList.remove('profitl-collapsed');})();
 
 // ---- Timer logic ----
-const DURATION = 5*60; // seconds
+const DURATION = 5; // seconds
 let seconds = DURATION;
 let timer   = null;
 let state   = 'idle'; // idle | running | paused
