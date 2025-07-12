@@ -5,67 +5,25 @@
 <meta name="description" content="Start a 5‑minute online countdown timer that works on any device. One click to start, pause, resume, or restart.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}
-  h1{font-size:8rem;margin:0;letter-spacing:1px}
-  button{padding:1rem 2rem;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.2rem}
-  #sound{display:flex;align-items:center;gap:.4rem;font-size:1.1rem}
-  #sound.on  {background:#d4f8d4}
-  #sound.off {background:#f4f4f4}
+ body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}
+ h1{font-size:8rem;margin:0;letter-spacing:1px}
+ button{padding:1rem 2rem;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.2rem}
+ #sound{display:flex;align-items:center;gap:.4rem;font-size:1.1rem}
+ #sound.on  {background:#d4f8d4}
+ #sound.off {background:#f4f4f4}
 </style>
 </head><body>
-  <h1 id="display">00:05</h1>
-  <button id="ctrl">Start</button>
-  <button id="sound" class="on">✅ Sound On</button>
-  <audio id="beep" src="ding.mp3" preload="auto"></audio>
+ <h1 id="display">05:00</h1>
+ <button id="ctrl">Start</button>
+ <button id="sound" class="on">✅ Sound On</button>
 <script>
-  const DURATION = 5;
-  let seconds = DURATION, timer=null, state='idle'; // idle | running | paused
-  let audioCtx=null, beepBuf=null, soundOn=true;
-  const display=document.getElementById('display');
-  const btn    =document.getElementById('ctrl');
-  const sndBtn =document.getElementById('sound');
-
-  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-  const paint=()=>display.textContent=fmt(seconds); paint();
-
-  async function initAudio(){
-    if(audioCtx) return;
-    try{
-      audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-      const buf=await (await fetch('ding.mp3')).arrayBuffer();
-      beepBuf=await audioCtx.decodeAudioData(buf);
-    }catch(e){console.warn('Audio init failed',e);}
-  }
-
-  function playBeep(){
-    if(!soundOn||!beepBuf) return;
-    const src=audioCtx.createBufferSource();
-    src.buffer=beepBuf; src.connect(audioCtx.destination); src.start();
-  }
-
-  function updateSoundUI(){
-    sndBtn.textContent = soundOn ? '✅ Sound On' : '🚫 Sound Off';
-    sndBtn.className   = soundOn ? 'on' : 'off';
-  }
-
-  function startTimer(){
-    seconds=DURATION; paint(); timer=setInterval(tick,1000); state='running'; btn.textContent='Pause'; }
-
-  function tick(){
-    if(seconds<=0){ clearInterval(timer); playBeep(); state='idle'; btn.textContent='Restart'; return; }
-    seconds--; paint();
-  }
-
-  btn.onclick=()=>{
-    if(state==='idle'){
-      initAudio();
-      startTimer();
-      return;
-    }
-    if(state==='running'){ clearInterval(timer); state='paused'; btn.textContent='Resume'; return; }
-    if(state==='paused'){ timer=setInterval(tick,1000); state='running'; btn.textContent='Pause'; }
-  };
-
-  sndBtn.onclick=()=>{ soundOn=!soundOn; updateSoundUI(); };
+ const DURATION=5*60;let seconds=DURATION,timer=null,state='idle';let audioCtx=null,soundOn=true;
+ const d=document.getElementById('display'),btn=document.getElementById('ctrl'),snd=document.getElementById('sound');
+ const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;const paint=()=>d.textContent=fmt(seconds);paint();
+ function playBeep(){if(!soundOn)return;audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=0.25;o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+0.35);} 
+ function tick(){if(seconds<=0){clearInterval(timer);playBeep();state='idle';btn.textContent='Restart';return;}seconds--;paint();}
+ function startTimer(){seconds=DURATION;paint();timer=setInterval(tick,1000);state='running';btn.textContent='Pause';}
+ btn.onclick=()=>{if(state==='idle'){startTimer();return;}if(state==='running'){clearInterval(timer);state='paused';btn.textContent='Resume';return;}if(state==='paused'){timer=setInterval(tick,1000);state='running';btn.textContent='Pause';}};
+ snd.onclick=()=>{soundOn=!soundOn;snd.textContent=soundOn?'✅ Sound On':'🚫 Sound Off';snd.className=soundOn?'on':'off';};
 </script>
 </body></html>
