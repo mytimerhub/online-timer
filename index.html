@@ -13,13 +13,20 @@
  #sound.off {background:#f4f4f4}
 </style>
 </head><body>
- <h1 id="display">00:05</h1>
+ <h1 id="display">00:50</h1>
  <button id="ctrl">Start</button>
  <button id="sound" class="on">✅ Sound On</button>
 <script>
  // ---- Defensive: remove known overlay from Profitl extension ----
  (function(){const el=document.getElementById('profitl-root');if(el) el.remove();document.body.classList.remove('profitl-collapsed');})();
- const DURATION = 5;           // 5 minutes in seconds
+ // ---- Audio unlock on first user gesture ----
+let audioCtx=null, soundOn=true;
+function ensureAudioCtx(){
+  if(audioCtx) return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+}
+
+const DURATION = 5;           // 5 minutes in seconds
  let seconds = DURATION;
  let timer   = null;
  let state   = 'idle';            // idle | running | paused
