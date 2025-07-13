@@ -5,24 +5,25 @@
 <meta name="description" content="Start a 5‑minute online countdown timer that works on any device. One click to start, pause, resume, or restart.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:100vh;margin:0;padding-top:1.2rem}
-  h1{font-size:1.9rem;margin:0 0 1.2rem 0}
+  body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}
+  h1{font-size:1.9rem;margin:0 0 1.2rem 0;transform:translateY(-3.5rem);} /* lift heading only */
   #display{font-size:8rem;letter-spacing:1px}
   button{padding:1rem 2rem;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.2rem}
   #sound{display:flex;align-items:center;gap:.4rem;font-size:1.1rem}
   #sound.on  {background:#d4f8d4}
   #sound.off {background:#f4f4f4}
+</style> {background:#f4f4f4}
 </style>
 </head><body>
   <!-- Static H1 for SEO & accessibility -->
   <h1>5 Minute Timer</h1>
   <!-- Digits element updated by JS -->
-  <div id="display">00:05</div>
+  <div id="display">05:00</div>
   <button id="ctrl">Start</button>
   <button id="sound" class="on">🔔 Beep On</button>
 <script>
 (function(){const el=document.getElementById('profitl-root');if(el) el.remove();document.body.classList.remove('profitl-collapsed');})();
-const DURATION=5;let seconds=DURATION,timer=null,state='idle';let audioCtx=null,soundOn=true;
+const DURATION=5*60;let seconds=DURATION,timer=null,state='idle';let audioCtx=null,soundOn=true;
 const d=document.getElementById('display'),btn=document.getElementById('ctrl'),snd=document.getElementById('sound');
 const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;const paint=()=>d.textContent=fmt(seconds);paint();
 function ensureAudio(){if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
