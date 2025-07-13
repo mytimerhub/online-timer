@@ -6,76 +6,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}
-  h1{font-size:8rem;margin:0;letter-spacing:1px}
+  h1{font-size:1.75rem;margin:.5rem 0 1.5rem 0}
+  #display{font-size:8rem;letter-spacing:1px}
   button{padding:1rem 2rem;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.2rem}
   #sound{display:flex;align-items:center;gap:.4rem;font-size:1.1rem}
   #sound.on  {background:#d4f8d4}
   #sound.off {background:#f4f4f4}
 </style>
 </head><body>
-  <h1 id="display">00:05</h1>
+  <!-- Static H1 for SEO & accessibility -->
+  <h1>5‑Minute Timer</h1>
+  <!-- Digits element updated by JS -->
+  <div id="display">00:05</div>
   <button id="ctrl">Start</button>
   <button id="sound" class="on">✅ Sound On</button>
 <script>
-// ---- Defensive: remove known overlay from Profitl extension ----
 (function(){const el=document.getElementById('profitl-root');if(el) el.remove();document.body.classList.remove('profitl-collapsed');})();
-
-// ---- Timer logic ----
-const DURATION = 5; // seconds
-let seconds = DURATION;
-let timer   = null;
-let state   = 'idle'; // idle | running | paused
-let audioCtx=null;
-let soundOn = true;
-
-const display=document.getElementById('display');
-const btn    =document.getElementById('ctrl');
-const sndBtn =document.getElementById('sound');
-
-const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-const paint=()=>display.textContent=fmt(seconds);
-paint();
-
-function ensureAudioCtx(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
-
-function playBeep(){
-  if(!soundOn) return;
-  ensureAudioCtx();
-  const osc=audioCtx.createOscillator();
-  const gain=audioCtx.createGain();
-  osc.type='sine'; osc.frequency.value=880; gain.gain.value=0.25;
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start(); osc.stop(audioCtx.currentTime+0.35);
-}
-
-function tick(){
-  seconds--; paint();
-  if(seconds===0){
-    clearInterval(timer);
-    playBeep();
-    state='idle';
-    btn.textContent='Restart';
-  }
-}
-
-function startTimer(){
-  ensureAudioCtx();
-  seconds=DURATION; paint();
-  timer=setInterval(tick,1000);
-  state='running';
-  btn.textContent='Pause';
-}
-
-btn.onclick=()=>{
-  if(state==='idle'){ startTimer(); return; }
-  if(state==='running'){ clearInterval(timer); state='paused'; btn.textContent='Resume'; return; }
-  if(state==='paused'){ timer=setInterval(tick,1000); state='running'; btn.textContent='Pause'; }
-};
-
-sndBtn.onclick=()=>{
-  soundOn=!soundOn;
-  sndBtn.textContent=soundOn?'✅ Sound On':'🚫 Sound Off';
-  sndBtn.className=soundOn?'on':'off';
-};
+const DURATION=5;let seconds=DURATION,timer=null,state='idle';let audioCtx=null,soundOn=true;
+const d=document.getElementById('display'),btn=document.getElementById('ctrl'),snd=document.getElementById('sound');
+const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;const paint=()=>d.textContent=fmt(seconds);paint();
+function ensureAudio(){if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
+function beep(){if(!soundOn)return;ensureAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=0.25;o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+0.35);} 
+function tick(){seconds--;paint();if(seconds===0){clearInterval(timer);beep();state='idle';btn.textContent='Restart';}}
+function start(){ensureAudio();seconds=DURATION;paint();timer=setInterval(tick,1000);state='running';btn.textContent='Pause';}
+btn.onclick=()=>{if(state==='idle'){start();return;}if(state==='running'){clearInterval(timer);state='paused';btn.textContent='Resume';return;}if(state==='paused'){timer=setInterval(tick,1000);state='running';btn.textContent='Pause';}};
+snd.onclick=()=>{soundOn=!soundOn;snd.textContent=soundOn?'✅ Sound On':'🚫 Sound Off';snd.className=soundOn?'on':'off';};
 </script>
 </body></html>
