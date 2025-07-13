@@ -19,7 +19,7 @@
   <!-- Digits element updated by JS -->
   <div id="display">00:05</div>
   <button id="ctrl">Start</button>
-  <button id="sound" class="on">✅ Sound On</button>
+  <button id="sound" class="on">🔔 Beep On</button>
 <script>
 (function(){const el=document.getElementById('profitl-root');if(el) el.remove();document.body.classList.remove('profitl-collapsed');})();
 const DURATION=5;let seconds=DURATION,timer=null,state='idle';let audioCtx=null,soundOn=true;
@@ -30,6 +30,6 @@ function beep(){if(!soundOn)return;ensureAudio();const o=audioCtx.createOscillat
 function tick(){seconds--;paint();if(seconds===0){clearInterval(timer);beep();state='idle';btn.textContent='Restart';}}
 function start(){ensureAudio();seconds=DURATION;paint();timer=setInterval(tick,1000);state='running';btn.textContent='Pause';}
 btn.onclick=()=>{if(state==='idle'){start();return;}if(state==='running'){clearInterval(timer);state='paused';btn.textContent='Resume';return;}if(state==='paused'){timer=setInterval(tick,1000);state='running';btn.textContent='Pause';}};
-snd.onclick=()=>{soundOn=!soundOn;snd.textContent=soundOn?'✅ Sound On':'🚫 Sound Off';snd.className=soundOn?'on':'off';};
+snd.onclick=()=>{soundOn=!soundOn;snd.textContent=soundOn?'🔔 Beep On':'🚫 Beep Off';snd.className=soundOn?'on':'off';};
 </script>
 </body></html>
