@@ -3,27 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <title>5 Minute Timer – Free Online Countdown | MyTimerHub</title>
-<meta name="description"
-      content="Start a five minute timer (5-minute countdown) on any device. One click to start, pause, reset, toggle the end-beep, or browse more timers.">
+
+<!-- SEO -->
+<meta name="description" content="Start a five-minute online countdown timer on any device. One click to start, pause, reset, toggle the end-beep, or browse more timers.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- 🟡 Google Analytics 4 – replace G-XXXXXXX with your Measurement ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-55CF81T3WD"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'G-55CF81T3WD');
+</script>
+
+<!-- Styles -->
 <style>
   :root{ --btn-w: min(45vw,160px); }
-  body{font-family:sans-serif;color:#222;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:100vh;margin:0;padding-top:2.5rem}
+  body{
+    font-family:sans-serif; color:#222;
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:flex-start; height:100vh; margin:0; padding-top:2.5rem;
+  }
   h1{font-size:1.9rem;margin:0}
   #homeLink{font-size:.95rem;margin:.4rem 0 1rem;opacity:.8;text-decoration:none;color:#666}
   #homeLink:hover{text-decoration:underline}
   #display{font-size:clamp(4rem,20vw,8rem);letter-spacing:1px;margin-bottom:1rem}
   .row{display:flex;gap:.8rem}
-  button{width:var(--btn-w);padding:1rem 0;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;background:#f4f4f4;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:.8rem}
-  button:focus-visible{outline:3px solid #555;outline-offset:2px}
+  button{
+    width:var(--btn-w); padding:1rem 0; font-size:1.25rem; border:none;
+    border-radius:8px; cursor:pointer; background:#f4f4f4;
+    box-shadow:0 2px 6px rgba(0,0,0,.15); margin-top:.8rem
+  }
+  button:focus-visible{outline:3px solid #555; outline-offset:2px}
 
   /* slider toggle */
-  .sound-wrap{display:flex;flex-direction:column;align-items:center;margin-top:2rem}            /* moved slightly lower */
+  .sound-wrap{display:flex;flex-direction:column;align-items:center;margin-top:2rem}
   .sound-toggle{display:flex;align-items:center;gap:.5rem}
   .switch{position:relative;width:46px;height:24px}
   .switch input{opacity:0;width:0;height:0}
-  .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:34px;transition:.2s}
-  .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+  .slider{
+    position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+    background:#ccc;border-radius:34px;transition:.2s;
+  }
+  .slider:before{
+    position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;
+    background:#fff;border-radius:50%;transition:.2s;
+  }
   input:checked + .slider{background:#34d058}
   input:checked + .slider:before{transform:translateX(22px)}
   .state-label{font-size:.9rem;margin-top:.25rem;opacity:.85}
@@ -33,14 +58,13 @@
   <h1>5 Minute Timer</h1>
   <a id="homeLink" href="index.html" rel="nofollow">More Timers</a>
 
-  <div id="display">05:00</div>
+  <div id="display">00:05</div>
 
   <div class="row">
     <button id="ctrl">Start</button>
     <button id="reset">Reset</button>
   </div>
 
-  <!-- bell-slider toggle -->
   <div class="sound-wrap">
     <div class="sound-toggle">
       <span>🔕</span>
@@ -53,35 +77,50 @@
     <span id="soundState" class="state-label">End-beep ON</span>
   </div>
 
+<!-- Logic -->
 <script>
-/* remove Profitl overlay if present */
-(function(){const p=document.getElementById('profitl-root');if(p){p.remove();document.body.classList.remove('profitl-collapsed');}})();
+// Remove Profitl overlay if present
+(function(){
+  const p = document.getElementById('profitl-root');
+  if(p){
+    p.remove();
+    document.body.classList.remove('profitl-collapsed');
+  }
+})();
 
-/* ---------- core vars ---------- */
-const DUR = 5*60;                      /* seconds */
-let sec = DUR, timer = null, state = 'idle';          // idle | running | paused
-let audioCtx = null, beepOn = true, startedOnce = false;
+/* ---------- core constants ---------- */
+const DUR = 5;                 // seconds per cycle
 
-/* ---------- helpers ---------- */
+/* ---------- state ---------- */
+let sec = DUR,
+    timer   = null,
+    state   = 'idle',               // idle | running | paused
+    audioCtx = null,
+    beepOn   = true,
+    gtagSent = false;
+
+/* ---------- dom helpers ---------- */
 const $ = id => document.getElementById(id);
 const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'),
       toggle = $('soundToggle'), label = $('soundState');
-const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const fmt  = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 const paint = () => disp.textContent = fmt(sec); paint();
-function audio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
 
-/* ---------- sound ---------- */
+/* ---------- audio ---------- */
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
 function beep(){
   if(!beepOn) return;
-  audio();
+  ensureAudio();
   if(audioCtx.state === 'suspended') audioCtx.resume();
-  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-  o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.25;
-  o.connect(g).connect(audioCtx.destination);
-  o.start(); o.stop(audioCtx.currentTime + 0.35);
+  const osc  = audioCtx.createOscillator(),
+        gain = audioCtx.createGain();
+  osc.type = 'sine';  osc.frequency.value = 880;
+  gain.gain.value = 0.25;
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.35);
 }
 
-/* ---------- tick ---------- */
+/* ---------- timer loop ---------- */
 function tick(){
   if(--sec <= 0){
     sec = 0; paint();
@@ -96,21 +135,38 @@ function tick(){
 
 /* ---------- controls ---------- */
 function start(){
-  if(state === 'idle'){ sec = DUR; paint(); }          // reset only from idle
-  if(timer) clearInterval(timer);                      // prevent double interval
-  if(!startedOnce && typeof gtag === 'function'){
-    gtag('event','timerStart',{value:'5'}); startedOnce = true;
+  if(state === 'idle'){ sec = DUR; paint(); }            // reset only from idle
+  if(timer) clearInterval(timer);                        // guard double interval
+
+  if(!gtagSent && typeof gtag === 'function'){
+    gtag('event','timerStart',{value:'5'});              // GA4 custom event
+    gtagSent = true;
   }
-  audio();
+
+  ensureAudio();
   timer = setInterval(tick, 1000);
   state = 'running';
   ctrl.textContent = 'Pause';
 }
-function pause(){ clearInterval(timer); timer = null; state = 'paused'; ctrl.textContent = 'Resume'; }
 
+function pause(){
+  clearInterval(timer); timer = null;
+  state = 'paused';
+  ctrl.textContent = 'Resume';
+}
+
+/* ---------- event listeners ---------- */
 ctrl.onclick  = () => state === 'running' ? pause() : start();
-reset.onclick = () => { clearInterval(timer); timer = null; sec = DUR; paint(); state = 'idle'; ctrl.textContent = 'Start'; };
-toggle.onchange = () => { beepOn = toggle.checked; label.textContent = beepOn ? 'End-beep ON' : 'End-beep OFF'; };
+reset.onclick = () => {
+  clearInterval(timer); timer = null;
+  sec = DUR; paint();
+  state = 'idle';
+  ctrl.textContent = 'Start';
+};
+toggle.onchange = () => {
+  beepOn = toggle.checked;
+  label.textContent = beepOn ? 'End-beep ON' : 'End-beep OFF';
+};
 </script>
 </body>
 </html>
