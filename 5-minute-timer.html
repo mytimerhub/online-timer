@@ -26,7 +26,7 @@
 </head>
 <body>
   <h1>5 Minute Timer</h1>
-  <div id="display">00:05</div>
+  <div id="display">05:00</div>
   <button id="ctrl">Start</button>
   <button id="sound" class="on">🔔 Beep On</button>
   <button id="home">More Timers</button>
@@ -34,7 +34,7 @@
 // Remove Profitl overlay if present
 (function(){const el=document.getElementById('profitl-root');if(el){el.remove();document.body.classList.remove('profitl-collapsed');}})();
 
-const DURATION=5;let seconds=DURATION,timer=null,state='idle';let audioCtx=null,soundOn=true;
+const DURATION=5*60;let seconds=DURATION,timer=null,state='idle';let audioCtx=null,soundOn=true;
 const d=document.getElementById('display'),c=document.getElementById('ctrl'),s=document.getElementById('sound');
 const home=document.getElementById('home');
 const fmt=x=>`${String(Math.floor(x/60)).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`;
