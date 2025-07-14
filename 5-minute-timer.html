@@ -18,7 +18,7 @@
   button:focus-visible{outline:3px solid #555;outline-offset:2px}
 
   /* slider toggle */
-  .sound-wrap{display:flex;flex-direction:column;align-items:center;margin-top:1rem}
+  .sound-wrap{display:flex;flex-direction:column;align-items:center;margin-top:2rem}            /* moved slightly lower */
   .sound-toggle{display:flex;align-items:center;gap:.5rem}
   .switch{position:relative;width:46px;height:24px}
   .switch input{opacity:0;width:0;height:0}
@@ -54,19 +54,63 @@
   </div>
 
 <script>
-const DUR=5*60;let sec=DUR,t=null,state='idle',ctx=null,beepOn=true;
-const $=id=>document.getElementById(id);
-const disp=$('display'),ctrl=$('ctrl'),reset=$('reset'),toggle=$('soundToggle'),label=$('soundState');
-const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-const paint=()=>disp.textContent=fmt(sec); paint();
-function audio(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();}
-function beep(){if(!beepOn)return;audio();if(ctx.state==='suspended')ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.25;o.connect(g).connect(ctx.destination);o.start();o.stop(ctx.currentTime+.35);}
-function tick(){if(--sec<=0){sec=0;paint();clearInterval(t);t=null;beep();state='idle';ctrl.textContent='Start';return;}paint();}
-function start(){sec=DUR;paint();if(t)clearInterval(t);audio();t=setInterval(tick,1000);state='running';ctrl.textContent='Pause';}
-function pause(){clearInterval(t);t=null;state='paused';ctrl.textContent='Resume';}
-ctrl.onclick=()=>state==='running'?pause():start();
-reset.onclick=()=>{clearInterval(t);t=null;sec=DUR;paint();state='idle';ctrl.textContent='Start';};
-toggle.onchange=()=>{beepOn=toggle.checked;label.textContent=beepOn?'End-beep ON':'End-beep OFF';};
+/* remove Profitl overlay if present */
+(function(){const p=document.getElementById('profitl-root');if(p){p.remove();document.body.classList.remove('profitl-collapsed');}})();
+
+/* ---------- core vars ---------- */
+const DUR = 5*60;                      /* seconds */
+let sec = DUR, timer = null, state = 'idle';          // idle | running | paused
+let audioCtx = null, beepOn = true, startedOnce = false;
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'),
+      toggle = $('soundToggle'), label = $('soundState');
+const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const paint = () => disp.textContent = fmt(sec); paint();
+function audio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+
+/* ---------- sound ---------- */
+function beep(){
+  if(!beepOn) return;
+  audio();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.25;
+  o.connect(g).connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + 0.35);
+}
+
+/* ---------- tick ---------- */
+function tick(){
+  if(--sec <= 0){
+    sec = 0; paint();
+    clearInterval(timer); timer = null;
+    beep();
+    state = 'idle';
+    ctrl.textContent = 'Start';
+    return;
+  }
+  paint();
+}
+
+/* ---------- controls ---------- */
+function start(){
+  if(state === 'idle'){ sec = DUR; paint(); }          // reset only from idle
+  if(timer) clearInterval(timer);                      // prevent double interval
+  if(!startedOnce && typeof gtag === 'function'){
+    gtag('event','timerStart',{value:'5'}); startedOnce = true;
+  }
+  audio();
+  timer = setInterval(tick, 1000);
+  state = 'running';
+  ctrl.textContent = 'Pause';
+}
+function pause(){ clearInterval(timer); timer = null; state = 'paused'; ctrl.textContent = 'Resume'; }
+
+ctrl.onclick  = () => state === 'running' ? pause() : start();
+reset.onclick = () => { clearInterval(timer); timer = null; sec = DUR; paint(); state = 'idle'; ctrl.textContent = 'Start'; };
+toggle.onchange = () => { beepOn = toggle.checked; label.textContent = beepOn ? 'End-beep ON' : 'End-beep OFF'; };
 </script>
 </body>
 </html>
