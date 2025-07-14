@@ -3,11 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <title>5 Minute Timer – Free Online Countdown | MyTimerHub</title>
-<meta name="description" content="Start a 5‑minute online countdown timer that works on any device. One click to start, pause, resume, restart, or browse more timers.">
+<meta name="description" content="Start a 5‑minute online countdown timer that works on any device. One click to start, pause, resume, or restart.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:100vh;margin:0;padding-top:2.5rem}
-  h1{font-size:1.9rem;margin:0 0 .4rem}
+  body{
+    font-family:sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;   /* leave space for sticky ad footer */
+    height:100vh;
+    margin:0;
+    padding-top:2.5rem;
+  }
+  /* Heading slightly lifted for visual balance */
+  h1{font-size:1.9rem;margin:0 0 1.2rem}
   #display{font-size:8rem;letter-spacing:1px}
   button{padding:1rem 2rem;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.2rem}
   #sound{display:flex;align-items:center;gap:.4rem;font-size:1.1rem}
@@ -16,71 +26,27 @@
 </head>
 <body>
   <h1>5 Minute Timer</h1>
-  <div id="display">00:05</div>
-
-  <button id="ctrl">Start/Pause</button>
-  <button id="reset">Restart</button>
-  <button id="homeBtn">More Timers</button>
-  <button id="sound" class="on">🔔 Beep On</button>
-<script>
-(function(){const el=document.getElementById('profitl-root');if(el){el.remove();document.body.classList.remove('profitl-collapsed');}})();
-const DURATION=5;let seconds=DURATION,timer=null,state='idle';let audioCtx=null,soundOn=true;
-const $=id=>document.getElementById(id);
-const d=$('display'),ctrl=$('ctrl'),reset=$('reset'),sound=$('sound'),home=$('homeBtn');
-const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-const paint=()=>d.textContent=fmt(seconds);paint();
-function ensureAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
-function beep(){if(!soundOn)return;ensureAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=0.25;o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+0.35);} 
-function tick(){seconds--;paint();if(seconds===0){clearInterval(timer);beep();state='idle';ctrl.textContent='Start/Pause';}}
-function start(){ensureAudio();timer=setInterval(tick,1000);state='running';ctrl.textContent='Pause';}
-function pause(){clearInterval(timer);state='paused';ctrl.textContent='Resume';}
-ctrl.onclick=()=>{if(state==='idle'||state==='paused'){start();return;}if(state==='running'){pause();}};
-reset.onclick=()=>{clearInterval(timer);seconds=DURATION;paint();state='idle';ctrl.textContent='Start/Pause';};
-home.onclick=()=>{location.href='index.html';};
-sound.onclick=()=>{soundOn=!soundOn;sound.textContent=soundOn?'🔔 Beep On':'🚫 Beep Off';sound.className=soundOn?'on':'off';};
-</script>
-</body>
-</html>
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>5 Minute Timer – Free Online Countdown | MyTimerHub</title>
-<meta name="description" content="Start a 5‑minute online countdown timer that works on any device. One click to start, pause, resume, restart, or switch timers.">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-  body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:100vh;margin:0;padding-top:2.5rem}
-  h1{font-size:1.9rem;margin:0 0 .4rem}
-  #homeLink{font-size:1rem;margin-bottom:1rem;opacity:.8;text-decoration:none}
-  #display{font-size:8rem;letter-spacing:1px}
-  button{padding:1rem 2rem;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.2rem}
-  #sound{display:flex;align-items:center;gap:.4rem;font-size:1.1rem}
-  #sound.on{background:#d4f8d4} #sound.off{background:#f4f4f4}
-</style>
-</head>
-<body>
-  <h1>5 Minute Timer</h1>
-  <a id="homeLink" href="index.html">More Timers</a>
   <div id="display">05:00</div>
-  <button id="ctrl">Start/Pause</button>
-  <button id="reset">Restart</button>
+  <button id="ctrl">Start</button>
   <button id="sound" class="on">🔔 Beep On</button>
+  <button id="home">More Timers</button>
 <script>
+// Remove Profitl overlay if present
 (function(){const el=document.getElementById('profitl-root');if(el){el.remove();document.body.classList.remove('profitl-collapsed');}})();
+
 const DURATION=5*60;let seconds=DURATION,timer=null,state='idle';let audioCtx=null,soundOn=true;
-const d=id('display'),ctrl=id('ctrl'),reset=id('reset'),snd=id('sound');
-function id(x){return document.getElementById(x)}
+const d=document.getElementById('display'),c=document.getElementById('ctrl'),s=document.getElementById('sound');
+const home=document.getElementById('home');
 const fmt=x=>`${String(Math.floor(x/60)).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`;
 const paint=()=>d.textContent=fmt(seconds);paint();
 function ensureAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
 function beep(){if(!soundOn)return;ensureAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=0.25;o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+0.35);} 
-function tick(){seconds--;paint();if(seconds===0){clearInterval(timer);beep();state='idle';ctrl.textContent='Start/Pause';}}
-function start(){ensureAudio();timer=setInterval(tick,1000);state='running';ctrl.textContent='Pause';}
-function pause(){clearInterval(timer);state='paused';ctrl.textContent='Resume';}
-ctrl.onclick=()=>{if(state==='idle'||state==='paused'){start();return;}if(state==='running'){pause();}};
-reset.onclick=()=>{clearInterval(timer);seconds=DURATION;paint();state='idle';ctrl.textContent='Start/Pause';};
-snd.onclick=()=>{soundOn=!soundOn;snd.textContent=soundOn?'🔔 Beep On':'🚫 Beep Off';snd.className=soundOn?'on':'off';};
+function tick(){seconds--;paint();if(seconds===0){clearInterval(timer);beep();state='idle';c.textContent='Restart';}}
+function startTimer(){ensureAudio();seconds=DURATION;paint();timer=setInterval(tick,1000);state='running';c.textContent='Pause';}
+
+c.onclick=()=>{if(state==='idle'){startTimer();return;}if(state==='running'){clearInterval(timer);state='paused';c.textContent='Resume';return;}if(state==='paused'){timer=setInterval(tick,1000);state='running';c.textContent='Pause';}};
+s.onclick=()=>{soundOn=!soundOn;s.textContent=soundOn?'🔔 Beep On':'🚫 Beep Off';s.className=soundOn?'on':'off';};
+home.onclick=()=>{window.location.href='index.html';};
 </script>
 </body>
 </html>
