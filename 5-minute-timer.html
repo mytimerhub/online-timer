@@ -33,7 +33,7 @@
   <h1>5 Minute Timer</h1>
   <a id="homeLink" href="index.html" rel="nofollow">More Timers</a>
 
-  <div id="display">00:05</div>
+  <div id="display">05:00</div>
 
   <div class="row">
     <button id="ctrl">Start</button>
@@ -55,7 +55,7 @@
 <script>
 (function(){const p=document.getElementById('profitl-root');if(p){p.remove();document.body.classList.remove('profitl-collapsed');}})();
 
-const DUR=5; let sec=DUR,t=null,state='idle',ctx=null,beepOn=true,startedOnce=false;
+const DUR=5*60; let sec=DUR,t=null,state='idle',ctx=null,beepOn=true,startedOnce=false;
 const $=id=>document.getElementById(id);
 const disp=$('display'),ctrl=$('ctrl'),reset=$('reset'),toggle=$('soundToggle'),label=$('soundState');
 const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
