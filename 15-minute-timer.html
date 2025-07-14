@@ -1,1 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>15 Minute Timer – Free Online Countdown | MyTimerHub</title>
+<meta name="description" content="Start a fifteen minute timer (15-minute online countdown) that works on any device. One click to start, pause, restart, toggle beep, or browse more timers.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{ --btn-w:160px; }                               /* equal button widths */
+  body{
+    font-family:sans-serif;
+    display:flex;flex-direction:column;align-items:center;
+    justify-content:flex-start;                         /* leave space for sticky ad */
+    height:100vh;margin:0;padding-top:2.5rem;
+  }
+  h1{font-size:1.9rem;margin:0}
+  a#homeLink{font-size:.95rem;margin:.4rem 0 1rem;text-decoration:none;opacity:.8}
+  #display{font-size:8rem;letter-spacing:1px;margin-bottom:1rem}
+  .row{display:flex;gap:1rem}
+  button{
+    width:var(--btn-w);
+    padding:1rem 0;
+    font-size:1.25rem;
+    border:none;border-radius:8px;cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:1.2rem
+  }
+  #sound{display:flex;align-items:center;justify-content:center;gap:.4rem;font-size:1.1rem}
+  #sound.on  {background:#d4f8d4}
+  #sound.off {background:#f4f4f4}
+</style>
+</head>
+<body>
+  <h1>15 Minute Timer</h1>
+  <a id="homeLink" href="index.html">More Timers</a>
 
+  <div id="display">15:00</div>
+
+  <div class="row">
+    <button id="ctrl">Start/Pause</button>
+    <button id="reset">Restart</button>
+  </div>
+
+  <button id="sound" class="on">🔔 Beep On</button>
+
+<script>
+(function(){const el=document.getElementById('profitl-root');if(el){el.remove();document.body.classList.remove('profitl-collapsed');}})();
+
+const DURATION = 15*60;                  /* seconds */
+let seconds = DURATION, timer = null, state = 'idle';   /* idle | running | paused */
+let audioCtx = null, beepOn = true;
+
+const $ = id => document.getElementById(id);
+const display = $('display'), ctrl = $('ctrl'), reset = $('reset'), soundBtn = $('sound');
+
+const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const paint = () => display.textContent = fmt(seconds); paint();
+
+/* Audio helpers */
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+function beep(){
+  if(!beepOn) return;
+  ensureAudio();
+  const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.type = 'sine'; osc.frequency.value = 880; gain.gain.value = 0.25;
+  osc.connect(gain).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+}
+
+/* Timer logic */
+function tick(){ seconds--; paint(); if(seconds === 0){ clearInterval(timer); beep(); state='idle'; ctrl.textContent='Start'; } }
+function start(){ ensureAudio(); timer = setInterval(tick,1000); state='running'; ctrl.textContent='Pause'; }
+function pause(){ clearInterval(timer); state='paused'; ctrl.textContent='Resume'; }
+
+/* Button handlers */
+ctrl.onclick  = () => state === 'running' ? pause() : start();
+reset.onclick = () => { clearInterval(timer); seconds = DURATION; paint(); state='idle'; ctrl.textContent='Start'; };
+soundBtn.onclick = () => {
+  beepOn = !beepOn;
+  soundBtn.textContent = beepOn ? '🔔 Beep On' : '🚫 Beep Off';
+  soundBtn.className   = beepOn ? 'on' : 'off';
+};
+</script>
+</body>
+</html>
