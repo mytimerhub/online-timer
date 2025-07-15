@@ -98,6 +98,7 @@ let sec = DUR,
     audioCtx = null,
     beepOn   = true,
     gtagSent = false;
+    clickLock = false;      /* NEW – debounce flag */
 
 /* ---------- dom helpers ---------- */
 const $ = id => document.getElementById(id);
