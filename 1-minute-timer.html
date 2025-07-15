@@ -159,7 +159,7 @@ function pause(){
 }
 
 /* ---------- event listeners ---------- */
-cctrl.onclick = () => {
+ctrl.onclick = () => {
   if (clickLock) return;                       // ← NEW guard
   clickLock = true; setTimeout(() => clickLock = false, 250);
   state === 'running' ? pause() : start();
