@@ -156,7 +156,12 @@ function pause(){
 }
 
 /* ---------- event listeners ---------- */
-ctrl.onclick  = () => state === 'running' ? pause() : start();
+ctrl.onclick = () => {
+   if (clickLock) return;     //  ← NEW guard
+   clickLock = true; setTimeout(() => clickLock = false, 250);
+  state === 'running' ? pause() : start();
+};
+  
 reset.onclick = () => {
   clearInterval(timer); timer = null;
   sec = DUR; paint();
