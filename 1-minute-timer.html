@@ -144,6 +144,8 @@ function start(){
   }
 
   ensureAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
   timer = setInterval(tick, 1000);
   state = 'running';
   ctrl.textContent = 'Pause';
