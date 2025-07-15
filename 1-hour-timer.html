@@ -98,6 +98,7 @@ let sec = DUR,
     audioCtx = null,
     beepOn   = true,
     gtagSent = false;
+    clickLock = false;
 
 /* ---------- dom helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -144,6 +145,7 @@ function start(){
   }
 
   ensureAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();   /* NEW – Chrome fix */
   timer = setInterval(tick, 1000);
   state = 'running';
   ctrl.textContent = 'Pause';
