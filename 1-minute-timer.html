@@ -5,7 +5,7 @@
 <title>1 Minute Timer – Free Online Countdown | MyTimerHub</title>
 
 <!-- SEO -->
-<meta name="description" content="Start a one minute timer on any device. One click to start, pause, reset, toggle the end-beep, or browse more timers.">
+<meta name="description" content="Start a one minute online countdown timer on any device. One click to start, pause, reset, toggle the end-beep, or browse more timers.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- 🟡 Google Analytics 4 – replace G-XXXXXXX with your Measurement ID -->
@@ -164,7 +164,7 @@ ctrl.onclick = () => {
   state === 'running' ? pause() : start();
 };
   
-reset.onclick = () => {
+  reset.onclick = () => {
   clearInterval(timer); timer = null;
   sec = DUR; paint();
   state = 'idle';
