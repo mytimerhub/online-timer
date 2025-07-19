@@ -15,23 +15,91 @@
   </script>
   <style>
     :root{ --btn-w: min(45vw,160px); }
-    body{font-family:sans-serif;color:#222;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:100vh;margin:0;padding-top:2.5rem}
-    h1{font-size:1.9rem;margin:0}
-    #homeLink{font-size:.95rem;margin:.4rem 0 1rem;opacity:.8;text-decoration:none;color:#666}
-    #homeLink:hover{text-decoration:underline}
-    #display{font-size:clamp(4rem,20vw,8rem);letter-spacing:1px;margin-bottom:1rem}
-    .row{display:flex;gap:.8rem}
-    button{width:var(--btn-w);padding:1rem 0;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;background:#f4f4f4;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:.8rem}
-    button:focus-visible{outline:3px solid #555;outline-offset:2px}
-    .sound-wrap{display:flex;flex-direction:column;align-items:center;margin-top:2rem}
-    .sound-toggle{display:flex;align-items:center;gap:.5rem}
-    .switch{position:relative;width:46px;height:24px}
-    .switch input{opacity:0;width:0;height:0}
-    .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:34px;transition:.2s}
-    .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
-    input:checked + .slider{background:#34d058}
-    input:checked + .slider:before{transform:translateX(22px)}
-    .state-label{font-size:.9rem;margin-top:.25rem;opacity:.85}
+    body {
+      font-family: sans-serif;
+      color: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      margin: 0;
+      padding-top: 2.5rem;
+    }
+    h1 { font-size: 1.9rem; margin: 0; }
+    #homeLink {
+      font-size: .95rem;
+      margin: .4rem 0 1rem;
+      opacity: .8;
+      text-decoration: none;
+      color: #666;
+    }
+    #homeLink:hover { text-decoration: underline; }
+    #display {
+      font-size: clamp(4rem,20vw,8rem);
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+    .row { display: flex; gap: .8rem; }
+    button {
+      width: var(--btn-w);
+      padding: 1rem 0;
+      font-size: 1.25rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #f4f4f4;
+      box-shadow: 0 2px 6px rgba(0,0,0,.15);
+      margin-top: .8rem;
+    }
+    button:focus-visible {
+      outline: 3px solid #555;
+      outline-offset: 2px;
+    }
+    .sound-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 2rem;
+    }
+    .switch {
+      position: relative;
+      width: 46px;
+      height: 24px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #ccc;
+      border-radius: 34px;
+      transition: .2s;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: .2s;
+    }
+    input:checked + .slider {
+      background: #34d058;
+    }
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+    .state-label {
+      font-size: .9rem;
+      margin-top: .25rem;
+      opacity: .85;
+    }
   </style>
 </head>
 <body>
@@ -46,58 +114,67 @@
   </div>
 
   <div class="sound-wrap">
-    <div class="sound-toggle">
-      <span>🔕</span>
-      <label class="switch" title="Play beep when timer finishes">
-        <input type="checkbox" id="soundToggle" aria-label="End-of-timer beep" checked>
-        <span class="slider"></span>
-      </label>
-      <span>🔔</span>
-    </div>
+    <span>🔕</span>
+    <label class="switch" title="Play beep when timer finishes">
+      <input type="checkbox" id="soundToggle" aria-label="End-of-timer beep" checked>
+      <span class="slider"></span>
+    </label>
+    <span>🔔</span>
     <span id="soundState" class="state-label">End‑beep ON</span>
   </div>
 
   <!-- inline 350 ms sine‑wave WAV ensures beep in every browser -->
   <audio id="beep" preload="auto">
-    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQgAAAAA////AAAAAAAAAAAAAAAAAAAA" type="audio/wav">
+    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQgAAAAA////AAAAAAAAAAAAAAAAAAAA"
+            type="audio/wav">
   </audio>
 
   <script>
   // Remove Profitl overlay if present
   (function(){
     const p = document.getElementById('profitl-root');
-    if(p){ p.remove(); document.body.classList.remove('profitl-collapsed'); }
+    if (p) {
+      p.remove();
+      document.body.classList.remove('profitl-collapsed');
+    }
   })();
 
-  const DUR = 1 * 60;             // seconds
-  let sec = DUR,
-      timer = null,
-      state = 'idle',            // idle | running | paused
-      beepOn = true,
-      gtagSent = false,
+  const DUR = 60;             // seconds
+  let sec       = DUR,
+      timer     = null,
+      state     = 'idle',     // idle | running | paused
+      beepOn    = true,
+      gtagSent  = false,
       clickLock = false;
 
-  const $ = id => document.getElementById(id);
-  const disp = $('display'),
-        ctrl = $('ctrl'),
-        reset = $('reset'),
-        toggle = $('soundToggle'),
-        label = $('soundState'),
-        beepEl = $('beep');
+  const $       = id => document.getElementById(id);
+  const disp    = $('display'),
+        ctrl    = $('ctrl'),
+        reset   = $('reset'),
+        toggle  = $('soundToggle'),
+        label   = $('soundState'),
+        beepEl  = $('beep');
 
-  const fmt = s => 
+  const fmt = s =>
     `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
   const paint = () => disp.textContent = fmt(sec);
   paint();
 
-  function beep(){
-    if(!beepOn) return;
+  // Unlock the audio element on first Start click:
+  function unlockAudio() {
+    // attempt a quick silent play/pause to satisfy Chrome’s policy
+    beepEl.play().then(_ => { beepEl.pause(); })
+             .catch(_ => {});
+  }
+
+  function beep() {
+    if (!beepOn) return;
     beepEl.currentTime = 0;
     beepEl.play();
   }
 
-  function tick(){
-    if(--sec <= 0){
+  function tick() {
+    if (--sec <= 0) {
       sec = 0; paint();
       clearInterval(timer); timer = null;
       beep();
@@ -108,11 +185,14 @@
     paint();
   }
 
-  function start(){
-    if(state === 'idle'){ sec = DUR; paint(); }
-    if(timer) clearInterval(timer);
+  function start() {
+    if (state === 'idle') {
+      unlockAudio();
+      sec = DUR; paint();
+    }
+    if (timer) clearInterval(timer);
 
-    if(!gtagSent && typeof gtag === 'function'){
+    if (!gtagSent && typeof gtag === 'function') {
       gtag('event','timerStart',{value:'1'});
       gtagSent = true;
     }
@@ -122,14 +202,15 @@
     ctrl.textContent = 'Pause';
   }
 
-  function pause(){
-    clearInterval(timer); timer = null;
+  function pause() {
+    clearInterval(timer);
+    timer = null;
     state = 'paused';
     ctrl.textContent = 'Resume';
   }
 
   ctrl.onclick = () => {
-    if(clickLock) return;
+    if (clickLock) return;
     clickLock = true;
     setTimeout(() => clickLock = false, 250);
     state === 'running' ? pause() : start();
