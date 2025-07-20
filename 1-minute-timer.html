@@ -9,8 +9,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
-  gtag('config','G-XXXXXXX');
+  function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config','G-XXXXXXX');
 </script>
 <style>
   :root{--btn-w:min(45vw,160px)}
@@ -31,7 +30,7 @@
   input:checked + .slider{background:#34d058}
   input:checked + .slider:before{transform:translateX(22px)}
   .state-label{font-size:.9rem;margin-top:.25rem;opacity:.85}
-  .diag{font:12px monospace;opacity:.55;margin-top:1rem}
+  .diag{font:11px monospace;opacity:.55;margin-top:1rem;white-space:pre-line;text-align:center;max-width:320px}
 </style>
 </head>
 <body>
@@ -57,20 +56,18 @@
     <span id="soundState" class="state-label">End‑beep ON</span>
   </div>
 
-  <!-- Audible inline WAV (two short tones: 880Hz + 660Hz) ~550ms -->
-  <audio id="beep" preload="auto">
-    <source
-      src="data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YVwAAAClR1x3d3d3d3d3c3NzclpaWlpaXFxcz8/Pv7+/v7+////kZFhYWFhYWFhYWFhYWFhYWJEZP///7+/v7+/v8/Pz9cXFxZWVlZWVxcXFx3d3d3d1xHSQ=="
-      type="audio/wav">
+  <!-- Louder fallback WAV (~700 ms) -->
+  <audio id="beepTag" preload="auto">
+    <source src="data:audio/wav;base64,UklGRuAAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YaAAAAAAgICAiIiIiIh4eHh4eHh4eHh4fHx8fHyMjIyMjJycnJycnJycnIyMjIyMfHx8fHx4eHh4eHh4eHh4iIiIiICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=" type="audio/wav">
   </audio>
 
   <div id="diag" class="diag"></div>
 
 <script>
-/* ===== Config (change when cloning) ===== */
-const DUR_SECONDS = 6;          // 60 sec (for quick test set to 5)
+/* ---------------- Configuration ---------------- */
+const DUR_SECONDS = 6;          // change to 5 for quick beep test
 const GA_VALUE    = '1';
-/* ======================================= */
+/* ------------------------------------------------ */
 
 let sec = DUR_SECONDS;
 let timer = null;
@@ -78,96 +75,125 @@ let state = 'idle';              // idle | running | paused
 let beepOn = true;
 let clickLock = false;
 let gtagSent = false;
-let unlocked = false;
 
-const $ = id => document.getElementById(id);
+/* Audio objects */
+let audioCtx = null;
+let unlocked = false;            // gesture-based unlock
+const WAV_FALLBACK = document.getElementById('beepTag');
+
+/* DOM refs */
+const $ = id=>document.getElementById(id);
 const disp=$('display'), ctrl=$('ctrl'), reset=$('reset'),
-      toggle=$('soundToggle'), label=$('soundState'),
-      beepEl=$('beep'), diag=$('diag');
+      toggle=$('soundToggle'), label=$('soundState'), diag=$('diag');
 
 const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-const paint = () => disp.textContent = fmt(sec);
+function paint(){ disp.textContent = fmt(sec); }
 paint();
 
-/* ---------- Diagnostics helper ---------- */
-function log(msg){
-  console.log('[TIMER]', msg);
-  if(diag) diag.textContent = msg;
+function log(m){
+  console.log('[timer]', m);
+  if(diag) diag.textContent = m;
 }
 
-/* ---------- Unlock audio (ALL early gestures) ---------- */
-['pointerdown','keydown','touchstart'].forEach(ev=>{
-  window.addEventListener(ev, () => {
-    if(!unlocked){
-      try {
-        beepEl.play().then(()=>{beepEl.pause();unlocked=true;log('Audio unlocked');})
-                     .catch(()=>{ /* ignore until Start */ });
-      } catch(e){}
-    }
-  }, { once:false, passive:true });
-});
-
-/* ---------- Beep with fallback ---------- */
-function beep(){
-  if(!beepOn) { log('Beep skipped (off)'); return; }
-  // Primary: HTMLAudioElement
+/* ----------- Unlock (Safari + Chrome) ----------- */
+function unlockOnce(){
+  if(unlocked) return;
   try {
-    beepEl.currentTime = 0;
-    const p = beepEl.play();
-    if(p && typeof p.then==='function'){
-      p.then(()=>log('HTMLAudioElement.play() ok'))
-       .catch(err=>{
-         log('play() rejected, fallback WebAudio: '+err);
-         fallbackOsc();
-       });
+    // 1) Create context
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended'){
+      audioCtx.resume().catch(()=>{});
     }
-  } catch(err){
-    log('play() threw, fallback: '+err);
-    fallbackOsc();
+    // 2) Prime media element (may fail silently)
+    WAV_FALLBACK.play().then(()=>WAV_FALLBACK.pause()).catch(()=>{});
+    unlocked = true;
+    log('Audio unlocked');
+  } catch(e){
+    log('Unlock error: '+e);
   }
 }
+['pointerdown','touchstart','keydown'].forEach(ev =>
+  window.addEventListener(ev, unlockOnce, {passive:true})
+);
 
-let audioCtx; // only if fallback needed
-function fallbackOsc(){
+/* ----------- Beep (Web Audio primary) ----------- */
+function webAudioBeep(){
+  if(!audioCtx){
+    try { audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+    catch(e){ return false; }
+  }
+  if(audioCtx.state === 'suspended'){
+    audioCtx.resume().catch(()=>{});
+  }
   try{
-    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain= audioCtx.createGain();
-    osc.type='sine'; osc.frequency.value=880;
-    gain.gain.value=0.25;
+    // Two short tones for audibility: 880Hz then 660Hz
+    const now = audioCtx.currentTime;
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
     osc.connect(gain).connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime+0.5);
+    osc.type='sine';
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.4, now+0.01);
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.setValueAtTime(660, now+0.35);
+    gain.gain.setValueAtTime(0.4, now+0.55);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+0.68);
+    osc.start(now);
+    osc.stop(now+0.7);
+    return true;
   }catch(e){
-    log('Fallback failed: '+e);
+    log('WebAudio beep failed: '+e);
+    return false;
   }
 }
 
-/* ---------- Timer logic ---------- */
+function htmlAudioBeep(){
+  try{
+    WAV_FALLBACK.currentTime = 0;
+    const p = WAV_FALLBACK.play();
+    if(p && p.catch) p.catch(e=>log('HTMLAudio play rejected: '+e));
+    return true;
+  }catch(e){
+    log('HTMLAudio exception: '+e);
+    return false;
+  }
+}
+
+function beep(){
+  if(!beepOn) { log('Beep off'); return; }
+  // Try Web Audio first (more consistent volume)
+  if(!webAudioBeep()){
+    htmlAudioBeep();
+  }
+}
+
+/* --------------- Timer logic -------------------- */
 function tick(){
   if(--sec <= 0){
-    sec = 0;
-    paint();
+    sec = 0; paint();
     clearInterval(timer); timer=null;
     beep();
     state='idle';
     ctrl.textContent='Start';
-    log('Finished → beep attempted');
+    log('Finished');
     return;
   }
   paint();
 }
 
 function start(){
-  if(state==='idle'){ sec=DUR_SECONDS; paint(); }
+  unlockOnce();
+  if(state==='idle'){
+    sec = DUR_SECONDS;
+    paint();
+  }
   if(timer) clearInterval(timer);
 
-  if(!gtagSent && typeof gtag === 'function'){
-    gtag('event','timerStart',{value:GA_VALUE});
-    gtagSent = true;
+  if(!gtagSent && typeof gtag==='function'){
+    gtag('event','timerStart',{value:GA_VALUE}); gtagSent=true;
   }
 
-  timer = setInterval(tick,1000);
+  timer = setInterval(tick, 1000);
   state='running';
   ctrl.textContent='Pause';
   log('Started');
@@ -180,10 +206,10 @@ function pause(){
   log('Paused');
 }
 
-/* ---------- Event handlers ---------- */
+/* --------------- UI Events ---------------------- */
 ctrl.onclick = () => {
   if(clickLock) return;
-  clickLock=true; setTimeout(()=>clickLock=false,250);
+  clickLock = true; setTimeout(()=>clickLock=false,250);
   state==='running' ? pause() : start();
 };
 
@@ -198,7 +224,7 @@ reset.onclick = () => {
 toggle.onchange = () => {
   beepOn = toggle.checked;
   label.textContent = beepOn ? 'End‑beep ON' : 'End‑beep OFF';
-  log('Beep toggled: '+(beepOn?'ON':'OFF'));
+  log('Beep: '+(beepOn?'ON':'OFF'));
 };
 </script>
 </body>
