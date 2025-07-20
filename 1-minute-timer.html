@@ -3,26 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <title>1 Minute Timer – Free Online Countdown | MyTimerHub</title>
-<meta name="description" content="Start a one‑minute online countdown timer on any device. One click to start, pause, reset, toggle the end‑beep, or browse more timers.">
+<meta name="description" content="Start a one minute online countdown timer on any device. One click to start, pause, reset, toggle the end-beep, or browse more timers.">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<!-- Google Analytics 4 (optional) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config','G-XXXXXXX');
-</script>
 <style>
   :root{--btn-w:min(45vw,160px)}
   body{font-family:sans-serif;color:#222;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:100vh;margin:0;padding-top:2.5rem}
   h1{font-size:1.9rem;margin:0 0 .4rem}
-  #homeLink{font-size:.95rem;margin:.4rem 0 1rem;opacity:.8;text-decoration:none;color:#666}
-  #homeLink:hover{text-decoration:underline}
   #display{font-size:clamp(4rem,20vw,8rem);letter-spacing:1px;margin-bottom:1rem}
   .row{display:flex;gap:.8rem}
   button{width:var(--btn-w);padding:1rem 0;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;background:#f4f4f4;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:.8rem}
   button:focus-visible{outline:3px solid #555;outline-offset:2px}
   .sound-wrap{display:flex;flex-direction:column;align-items:center;margin-top:2rem}
-  .sound-toggle{display:flex;align-items:center;gap:.5rem}
   .switch{position:relative;width:46px;height:24px}
   .switch input{opacity:0;width:0;height:0}
   .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:34px;transition:.2s}
@@ -35,8 +26,6 @@
 </head>
 <body>
   <h1>1 Minute Timer</h1>
-  <a id="homeLink" href="index.html" rel="nofollow">More Timers</a>
-
   <div id="display">01:00</div>
 
   <div class="row">
@@ -45,129 +34,143 @@
   </div>
 
   <div class="sound-wrap">
-    <div class="sound-toggle">
-      <span>🔕</span>
-      <label class="switch" title="Play beep when timer finishes">
-        <input type="checkbox" id="soundToggle" aria-label="End-of-timer beep" checked>
-        <span class="slider"></span>
-      </label>
-      <span>🔔</span>
-    </div>
-    <span id="soundState" class="state-label">End‑beep ON</span>
+    <span>🔕</span>
+    <label class="switch" title="Play beep when timer finishes">
+      <input type="checkbox" id="soundToggle" checked>
+      <span class="slider"></span>
+    </label>
+    <span>🔔</span>
+    <span id="soundState" class="state-label">End-beep ON</span>
   </div>
 
-  <!-- Louder fallback WAV (~700 ms) -->
-  <audio id="beepTag" preload="auto">
-    <source src="data:audio/wav;base64,UklGRuAAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YaAAAAAAgICAiIiIiIh4eHh4eHh4eHh4fHx8fHyMjIyMjJycnJycnJycnIyMjIyMfHx8fHx4eHh4eHh4eHh4iIiIiICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=" type="audio/wav">
+  <!-- Louder fallback WAV (~700ms) -->
+  <audio id="beepTag" preload="auto" playsinline>
+    <source
+      src="data:audio/wav;base64,UklGRuAAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YaAAAAAAgICAiIiIiIh4eHh4eHh4eHh4fHx8fHyMjIyMjJycnJycnJycnIyMjIyMfHx8fHx4eHh4eHh4eHh4iIiIiICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA="
+      type="audio/wav">
   </audio>
 
   <div id="diag" class="diag"></div>
 
 <script>
-/* ---------------- Configuration ---------------- */
-const DUR_SECONDS = 5;          // change to 5 for quick beep test
-const GA_VALUE    = '1';
-/* ------------------------------------------------ */
+/* -------- Configuration (adjust per timer) -------- */
+const DUR_SECONDS = 4;      // set to 5 for quick test
+const GA_VALUE    = '1';     // event value (optional if you add GA)
+/* -------------------------------------------------- */
 
 let sec = DUR_SECONDS;
 let timer = null;
-let state = 'idle';              // idle | running | paused
+let state = 'idle';          // idle | running | paused
 let beepOn = true;
 let clickLock = false;
 let gtagSent = false;
 
-/* Audio objects */
+/* Audio */
 let audioCtx = null;
-let unlocked = false;            // gesture-based unlock
-const WAV_FALLBACK = document.getElementById('beepTag');
+let unlocked = false;
+const beepTag = document.getElementById('beepTag');
 
-/* DOM refs */
-const $ = id=>document.getElementById(id);
-const disp=$('display'), ctrl=$('ctrl'), reset=$('reset'),
+/* DOM */
+const $ = id => document.getElementById(id);
+const disp = $('display'), ctrl=$('ctrl'), reset=$('reset'),
       toggle=$('soundToggle'), label=$('soundState'), diag=$('diag');
 
 const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-function paint(){ disp.textContent = fmt(sec); }
-paint();
+function paint(){ disp.textContent = fmt(sec); } paint();
 
-function log(m){
-  console.log('[timer]', m);
-  if(diag) diag.textContent = m;
-}
+function log(m){ console.log('[timer]', m); if(diag) diag.textContent = m; }
 
-/* ----------- Unlock (Safari + Chrome) ----------- */
-function unlockOnce(){
+/* ---------- Universal Unlock for iOS ---------- */
+function unlockAudio(){
   if(unlocked) return;
   try {
-    // 1) Create context
-    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
     if(audioCtx.state === 'suspended'){
       audioCtx.resume().catch(()=>{});
     }
-    // 2) Prime media element (may fail silently)
-    WAV_FALLBACK.play().then(()=>WAV_FALLBACK.pause()).catch(()=>{});
+
+    // Tiny audible blip (NOT silence) so iOS treats it as real playback
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g   = audioCtx.createGain();
+    osc.frequency.value = 880;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.09);
+
+    // Prime <audio> fallback (ignore rejection)
+    beepTag.play().then(()=>beepTag.pause()).catch(()=>{});
+
     unlocked = true;
     log('Audio unlocked');
   } catch(e){
-    log('Unlock error: '+e);
+    log('Unlock failed: ' + e);
   }
 }
 ['pointerdown','touchstart','keydown'].forEach(ev =>
-  window.addEventListener(ev, unlockOnce, {passive:true})
+  window.addEventListener(ev, unlockAudio, { passive:true })
 );
 
-/* ----------- Beep (Web Audio primary) ----------- */
+/* ---------- Primary Beep (Web Audio) ---------- */
 function webAudioBeep(){
   if(!audioCtx){
     try { audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
     catch(e){ return false; }
   }
-  if(audioCtx.state === 'suspended'){
-    audioCtx.resume().catch(()=>{});
-  }
-  try{
-    // Two short tones for audibility: 880Hz then 660Hz
+  if(audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+  try {
     const now = audioCtx.currentTime;
     const osc  = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain).connect(audioCtx.destination);
     osc.type='sine';
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.4, now+0.01);
+    // Two-tone 880 -> 660
     osc.frequency.setValueAtTime(880, now);
-    osc.frequency.setValueAtTime(660, now+0.35);
-    gain.gain.setValueAtTime(0.4, now+0.55);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now+0.68);
+    osc.frequency.linearRampToValueAtTime(660, now + 0.4);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.4, now + 0.02);
+    gain.gain.setValueAtTime(0.4, now + 0.55);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.72);
     osc.start(now);
-    osc.stop(now+0.7);
+    osc.stop(now + 0.75);
     return true;
-  }catch(e){
-    log('WebAudio beep failed: '+e);
+  } catch(e){
+    log('WebAudio beep error: '+e);
     return false;
   }
 }
 
+/* ---------- Fallback Beep (<audio>) ---------- */
 function htmlAudioBeep(){
-  try{
-    WAV_FALLBACK.currentTime = 0;
-    const p = WAV_FALLBACK.play();
-    if(p && p.catch) p.catch(e=>log('HTMLAudio play rejected: '+e));
+  try {
+    beepTag.currentTime = 0;
+    const p = beepTag.play();
+    if(p && p.catch) p.catch(err => log('HTMLAudio rejected: ' + err));
     return true;
-  }catch(e){
-    log('HTMLAudio exception: '+e);
+  } catch(e){
+    log('HTMLAudio exception: ' + e);
     return false;
   }
 }
 
+/* ---------- Unified Beep ---------- */
 function beep(){
-  if(!beepOn) { log('Beep off'); return; }
-  // Try Web Audio first (more consistent volume)
-  if(!webAudioBeep()){
+  if(!beepOn){ log('Beep OFF'); return; }
+  unlockAudio(); // ensure context is ready
+  let ok = webAudioBeep();
+  if(!ok){
+    log('Fallback to <audio>');
     htmlAudioBeep();
   }
+  if(navigator.vibrate) navigator.vibrate([120,50,120]); // haptic pattern
 }
 
-/* --------------- Timer logic -------------------- */
+/* ---------- Timer Logic ---------- */
 function tick(){
   if(--sec <= 0){
     sec = 0; paint();
@@ -182,18 +185,15 @@ function tick(){
 }
 
 function start(){
-  unlockOnce();
-  if(state==='idle'){
-    sec = DUR_SECONDS;
-    paint();
-  }
+  unlockAudio();
+  if(state==='idle'){ sec = DUR_SECONDS; paint(); }
   if(timer) clearInterval(timer);
 
-  if(!gtagSent && typeof gtag==='function'){
-    gtag('event','timerStart',{value:GA_VALUE}); gtagSent=true;
+  if(!gtagSent && typeof gtag === 'function'){
+    gtag('event','timerStart',{ value: GA_VALUE }); gtagSent = true;
   }
 
-  timer = setInterval(tick, 1000);
+  timer = setInterval(tick,1000);
   state='running';
   ctrl.textContent='Pause';
   log('Started');
@@ -206,25 +206,23 @@ function pause(){
   log('Paused');
 }
 
-/* --------------- UI Events ---------------------- */
+/* ---------- Events ---------- */
 ctrl.onclick = () => {
   if(clickLock) return;
-  clickLock = true; setTimeout(()=>clickLock=false,250);
+  clickLock=true; setTimeout(()=>clickLock=false,250);
   state==='running' ? pause() : start();
 };
-
 reset.onclick = () => {
   clearInterval(timer); timer=null;
-  sec=DUR_SECONDS; paint();
+  sec = DUR_SECONDS; paint();
   state='idle';
   ctrl.textContent='Start';
   log('Reset');
 };
-
 toggle.onchange = () => {
   beepOn = toggle.checked;
-  label.textContent = beepOn ? 'End‑beep ON' : 'End‑beep OFF';
-  log('Beep: '+(beepOn?'ON':'OFF'));
+  label.textContent = beepOn ? 'End-beep ON' : 'End-beep OFF';
+  log('Beep toggled: '+(beepOn?'ON':'OFF'));
 };
 </script>
 </body>
