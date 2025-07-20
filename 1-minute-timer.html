@@ -3,23 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <title>1 Minute Timer – Free Online Countdown | MyTimerHub</title>
-<meta name="description" content="Start a one minute online countdown timer on any device. One click to start, pause, reset, toggle the end-beep, or browse more timers.">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<!-- SEO -->
+<meta name="description" content="Start a one minute timer on any device. One click to start, pause, reset, toggle the end-beep, or browse more timers.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- 🟡 Google Analytics 4 – replace G-XXXXXXX with your Measurement ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-55CF81T3WD"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'G-55CF81T3WD');
+</script>
+
+<!-- Styles -->
 <style>
-  :root{--btn-w:min(45vw,160px)}
-  body{font-family:sans-serif;color:#222;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:100vh;margin:0;padding-top:2.5rem}
-  h1{font-size:1.9rem;margin:0 0 .4rem}
+  :root{ --btn-w: min(45vw,160px); }
+  body{
+    font-family:sans-serif; color:#222;
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:flex-start; height:100vh; margin:0; padding-top:2.5rem;
+  }
+  h1{font-size:1.9rem;margin:0}
   #homeLink{font-size:.95rem;margin:.4rem 0 1rem;opacity:.8;text-decoration:none;color:#666}
   #homeLink:hover{text-decoration:underline}
   #display{font-size:clamp(4rem,20vw,8rem);letter-spacing:1px;margin-bottom:1rem}
   .row{display:flex;gap:.8rem}
-  button{width:var(--btn-w);padding:1rem 0;font-size:1.25rem;border:none;border-radius:8px;cursor:pointer;background:#f4f4f4;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-top:.8rem}
-  button:focus-visible{outline:3px solid #555;outline-offset:2px}
+  button{
+    width:var(--btn-w); padding:1rem 0; font-size:1.25rem; border:none;
+    border-radius:8px; cursor:pointer; background:#f4f4f4;
+    box-shadow:0 2px 6px rgba(0,0,0,.15); margin-top:.8rem
+  }
+  button:focus-visible{outline:3px solid #555; outline-offset:2px}
+
+  /* slider toggle */
   .sound-wrap{display:flex;flex-direction:column;align-items:center;margin-top:2rem}
+  .sound-toggle{display:flex;align-items:center;gap:.5rem}
   .switch{position:relative;width:46px;height:24px}
   .switch input{opacity:0;width:0;height:0}
-  .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:34px;transition:.2s}
-  .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+  .slider{
+    position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+    background:#ccc;border-radius:34px;transition:.2s;
+  }
+  .slider:before{
+    position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;
+    background:#fff;border-radius:50%;transition:.2s;
+  }
   input:checked + .slider{background:#34d058}
   input:checked + .slider:before{transform:translateX(22px)}
   .state-label{font-size:.9rem;margin-top:.25rem;opacity:.85}
@@ -37,84 +66,111 @@
   </div>
 
   <div class="sound-wrap">
-    <span>🔕</span>
-    <label class="switch" title="Play beep when timer finishes">
-      <input type="checkbox" id="soundToggle" checked>
-      <span class="slider"></span>
-    </label>
-    <span>🔔</span>
+    <div class="sound-toggle">
+      <span>🔕</span>
+      <label class="switch" title="Play beep when timer finishes">
+        <input type="checkbox" id="soundToggle" aria-label="End-of-timer beep" checked>
+        <span class="slider"></span>
+      </label>
+      <span>🔔</span>
+    </div>
     <span id="soundState" class="state-label">End-beep ON</span>
   </div>
 
-  <!-- Inline ~350ms beep -->
-  <audio id="beep" preload="auto">
-    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQgAAAAA////AAAAAAAAAAAAAAAAAAAA" type="audio/wav">
-  </audio>
-
+<!-- Logic -->
 <script>
-const DUR = 60;
-let sec = DUR, timer=null, state='idle', beepOn=true, clickLock=false, unlocked=false;
+// Remove Profitl overlay if present
+(function(){
+  const p = document.getElementById('profitl-root');
+  if(p){
+    p.remove();
+    document.body.classList.remove('profitl-collapsed');
+  }
+})();
 
-const $ = id=>document.getElementById(id);
-const disp=$('display'), ctrl=$('ctrl'), reset=$('reset'),
-      toggle=$('soundToggle'), label=$('soundState'), beepEl=$('beep');
+/* ---------- core constants ---------- */
+const DUR = 1*60;                 // seconds per cycle
 
-const fmt = s => ${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')};
-function paint(){ disp.textContent = fmt(sec); }
-paint();
+/* ---------- state ---------- */
+let sec = DUR,
+    timer   = null,
+    state   = 'idle',               // idle | running | paused
+    audioCtx = null,
+    beepOn   = true,
+    gtagSent = false;
+    clickLock = false;
 
-function unlockAudio(){
-  if(unlocked) return;
-  unlocked = true;
-  // quick gesture-linked play/pause to satisfy autoplay
-  beepEl.play().then(()=>beepEl.pause()).catch(()=>{});
-}
+/* ---------- dom helpers ---------- */
+const $ = id => document.getElementById(id);
+const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'),
+      toggle = $('soundToggle'), label = $('soundState');
+const fmt  = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const paint = () => disp.textContent = fmt(sec); paint();
 
+/* ---------- audio ---------- */
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
 function beep(){
   if(!beepOn) return;
-  beepEl.currentTime = 0;
-  beepEl.play().catch(()=>{}); // swallow rare promise rejection
+  ensureAudio();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  const osc  = audioCtx.createOscillator(),
+        gain = audioCtx.createGain();
+  osc.type = 'sine';  osc.frequency.value = 880;
+  gain.gain.value = 0.25;
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.35);
 }
 
+/* ---------- timer loop ---------- */
 function tick(){
   if(--sec <= 0){
     sec = 0; paint();
-    clearInterval(timer); timer=null;
+    clearInterval(timer); timer = null;
     beep();
-    state='idle';
-    ctrl.textContent='Start';
+    state = 'idle';
+    ctrl.textContent = 'Start';
     return;
   }
   paint();
 }
 
+/* ---------- controls ---------- */
 function start(){
-  unlockAudio();
-  if(state==='idle'){ sec = DUR; paint(); }
-  if(timer) clearInterval(timer);
-  timer = setInterval(tick,1000);
-  state='running';
-  ctrl.textContent='Pause';
+  if(state === 'idle'){ sec = DUR; paint(); }            // reset only from idle
+  if(timer) clearInterval(timer);                        // guard double interval
+
+  if(!gtagSent && typeof gtag === 'function'){
+    gtag('event','timerStart',{value:'1'});              // GA4 custom event
+    gtagSent = true;
+  }
+
+  ensureAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  timer = setInterval(tick, 1000);
+  state = 'running';
+  ctrl.textContent = 'Pause';
 }
 
 function pause(){
-  clearInterval(timer); timer=null;
-  state='paused';
-  ctrl.textContent='Resume';
+  clearInterval(timer); timer = null;
+  state = 'paused';
+  ctrl.textContent = 'Resume';
 }
 
-ctrl.onclick=()=>{
-  if(clickLock) return;
-  clickLock=true; setTimeout(()=>clickLock=false,250);
-  state==='running'?pause():start();
+/* ---------- event listeners ---------- */
+ctrl.onclick = () => {
+  if (clickLock) return;                       // ← NEW guard
+  clickLock = true; setTimeout(() => clickLock = false, 250);
+  state === 'running' ? pause() : start();
 };
-
-reset.onclick=()=>{
-  clearInterval(timer); timer=null;
-  sec=DUR; paint(); state='idle'; ctrl.textContent='Start';
+  
+reset.onclick = () => {
+  clearInterval(timer); timer = null;
+  sec = DUR; paint();
+  state = 'idle';
+  ctrl.textContent = 'Start';
 };
-
-toggle.onchange=()=>{
+toggle.onchange = () => {
   beepOn = toggle.checked;
   label.textContent = beepOn ? 'End-beep ON' : 'End-beep OFF';
 };
