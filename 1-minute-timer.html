@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>1 Minute Timer – Free Online Countdown | MyTimerHub</title>
-  <meta name="description"
-        content="Start a one‑minute online countdown timer on any device. One click to start, pause, reset, toggle the end‑beep, or browse more timers.">
+  <meta name="description" content="Start a one‑minute online countdown timer on any device. One click to start, pause, reset, toggle the end‑beep, or browse more timers.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <!-- Google Analytics 4 — replace G‑XXXXXXX with your ID -->
+  <!-- Google Analytics 4 — replace G‑XXXXXXX -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+    function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
     gtag('config', 'G-XXXXXXX');
   </script>
 
@@ -58,7 +56,7 @@
     <span id="soundState" class="state-label">End‑beep ON</span>
   </div>
 
-  <!-- 750 ms single‑tone WAV fallback -->
+  <!-- 0 .75 s single‑tone WAV fallback -->
   <audio id="beepTag" preload="auto" playsinline>
     <source src="data:audio/wav;base64,UklGRuAAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YaAAAAAAgICAiIiIiIh4eHh4eHh4eHh4fHx8fHyMjIyMjJycnJycnJycnIyMjIyMfHx8fHx4eHh4eHh4eHh4iIiIiICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=" type="audio/wav">
   </audio>
@@ -66,64 +64,74 @@
   <div id="diag"></div>
 
 <script>
-/* ----- Config (adjust only these for another timer) ----- */
-const DUR_SECONDS = 6;         // change to 5 for a quick test
-/* ------------------------------------------------------- */
+/* ---------- Config ---------- */
+const DUR_SECONDS = 7;               // 5 for test
+/* ----------------------------- */
 
-let sec = DUR_SECONDS, timer=null, state='idle', beepOn=true, clickLock=false, unlocked=false;
-let audioCtx=null;
+let sec=DUR_SECONDS,timer=null,state='idle',beepOn=true,clickLock=false,unlocked=false,audioCtx=null;
 
 /* DOM refs */
-const $ = id => document.getElementById(id);
-const disp=$('display'), ctrl=$('ctrl'), reset=$('reset'),
-      toggle=$('soundToggle'), label=$('soundState'), diag=$('diag'),
-      beepEl=$('beepTag');
+const $=id=>document.getElementById(id);
+const d=$('display'),ctrl=$('ctrl'),reset=$('reset'),
+      toggle=$('soundToggle'),label=$('soundState'),
+      beepEl=$('beepTag'),diag=$('diag');
 
-const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-function paint(){ disp.textContent = fmt(sec); } paint();
-function log(m){ if(diag) diag.textContent = m; console.log('[timer]',m); }
+const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+function paint(){d.textContent=fmt(sec);} paint();
+function log(m){diag.textContent=m;console.log('[timer]',m);}
 
-/* --- Unlock audio on first real gesture (Chrome iOS needs this) --- */
+/* ---------- Unlock (louder blip = iOS Chrome safe) ---------- */
 function unlock(){
   if(unlocked) return;
   try{
-    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
-    osc.frequency.value = 1000;               // short blip
-    g.gain.setValueAtTime(0.0001,now);
-    g.gain.exponentialRampToValueAtTime(0.25,now+0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001,now+0.08);
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const n=audioCtx.currentTime,osc=audioCtx.createOscillator(),g=audioCtx.createGain();
+    osc.frequency.value=880;         /* louder audible blip */
+    g.gain.setValueAtTime(0.0001,n);
+    g.gain.exponentialRampToValueAtTime(0.35,n+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,n+0.09);
     osc.connect(g).connect(audioCtx.destination);
-    osc.start(now); osc.stop(now+0.09);
-    beepEl.play().then(()=>beepEl.pause()).catch(()=>{});
-    unlocked = true; log('Audio unlocked');
-  }catch(e){log('Unlock error: '+e);}
-}
-['pointerdown','touchstart','keydown'].forEach(ev =>
-  window.addEventListener(ev,unlock,{passive:true}));
+    osc.start(n);osc.stop(n+0.1);
 
-/* --- Beep helpers --- */
+    beepEl.play().then(()=>beepEl.pause()).catch(()=>{});
+    unlocked=true;log('Audio unlocked');
+  }catch(e){log('Unlock error:'+e);}
+}
+['pointerdown','touchstart','keydown'].forEach(ev=>window.addEventListener(ev,unlock,{passive:true}));
+
+/* ---------- Beep helpers ---------- */
 function webAudioBeep(){
   try{
     if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
     if(audioCtx.state==='suspended') audioCtx.resume();
     const n=audioCtx.currentTime,osc=audioCtx.createOscillator(),g=audioCtx.createGain();
-    osc.frequency.value = 880;
+    osc.frequency.value=880;
     g.gain.setValueAtTime(0.0001,n);
-    g.gain.exponentialRampToValueAtTime(0.4,n+0.02);
+    g.gain.exponentialRampToValueAtTime(0.4,n+0.03);
     g.gain.exponentialRampToValueAtTime(0.0001,n+0.75);
     osc.connect(g).connect(audioCtx.destination);
-    osc.start(n); osc.stop(n+0.77);
+    osc.start(n);osc.stop(n+0.78);
     return true;
   }catch{return false;}
 }
-function htmlBeep(){try{beepEl.currentTime=0;beepEl.play().catch(()=>{});return true;}catch{return false;}}
-function beep(){ if(!beepOn){log('Beep off');return;} unlock(); if(!webAudioBeep()) htmlBeep(); if(navigator.vibrate) navigator.vibrate([140,40,140]); }
+function htmlBeep(){
+  try{beepEl.currentTime=0;beepEl.play().catch(()=>{});return true;}catch{return false;}
+}
+function beep(){
+  if(!beepOn){log('Beep off');return;}
+  unlock();
+  /* play both; whichever succeeds first is heard */
+  htmlBeep();
+  webAudioBeep();
+  if(navigator.vibrate) navigator.vibrate([140,40,140]);
+}
 
-/* --- Countdown logic --- */
+/* ---------- Timer ---------- */
 function tick(){
-  if(--sec<=0){sec=0;paint();clearInterval(timer);timer=null;beep();state='idle';ctrl.textContent='Start';log('Finished');return;}
+  if(--sec<=0){
+    sec=0;paint();clearInterval(timer);timer=null;
+    beep();state='idle';ctrl.textContent='Start';log('Finished');return;
+  }
   paint();
 }
 function start(){
@@ -131,11 +139,11 @@ function start(){
   if(state==='idle'){sec=DUR_SECONDS;paint();}
   if(timer) clearInterval(timer);
   timer=setInterval(tick,1000);
-  state='running'; ctrl.textContent='Pause'; log('Started');
+  state='running';ctrl.textContent='Pause';log('Started');
 }
 function pause(){clearInterval(timer);timer=null;state='paused';ctrl.textContent='Resume';log('Paused');}
 
-/* --- UI events --- */
+/* ---------- UI events ---------- */
 ctrl.onclick=()=>{if(clickLock)return;clickLock=true;setTimeout(()=>clickLock=false,250);state==='running'?pause():start();};
 reset.onclick=()=>{clearInterval(timer);timer=null;sec=DUR_SECONDS;paint();state='idle';ctrl.textContent='Start';log('Reset');};
 toggle.onchange=()=>{beepOn=toggle.checked;label.textContent=beepOn?'End‑beep ON':'End‑beep OFF';};
