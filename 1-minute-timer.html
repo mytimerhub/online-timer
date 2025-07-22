@@ -27,7 +27,36 @@
   h1{font-size:1.9rem;margin:0}
   #homeLink{font-size:.95rem;margin:.4rem 0 1rem;opacity:.8;text-decoration:none;color:#666}
   #homeLink:hover{text-decoration:underline}
-  #display{font-size:clamp(4rem,20vw,8rem);letter-spacing:1px;margin-bottom:1rem}
+  #display{
+    font-size:clamp(4rem,20vw,8rem);
+    letter-spacing:1px;
+    margin-bottom:1rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:0.3em;
+  }
+  .display-min, .display-sec {
+    display:inline-block;
+  }
+  .dots {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 0.6em;
+    height: 1em;
+    margin: 0 0.05em;
+    position: relative;
+  }
+  .dots-dot {
+    width: 0.18em;
+    height: 0.18em;
+    background: #333;
+    border-radius: 50%;
+    margin: 0.13em 0;
+    display: block;
+  }
   .row{display:flex;gap:.8rem}
   button{
     width:var(--btn-w); padding:1rem 0; font-size:1.25rem; border:none;
@@ -58,7 +87,7 @@
   <h1>1 Minute Timer</h1>
   <a id="homeLink" href="index.html" rel="nofollow">More Timers</a>
 
-  <div id="display">01:00</div>
+  <div id="display"></div>
 
   <div class="row">
     <button id="ctrl">Start</button>
@@ -105,8 +134,24 @@ let audioUnlocked = false; // ← NEW
 const $ = id => document.getElementById(id);
 const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'),
       toggle = $('soundToggle'), label = $('soundState');
-const fmt  = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-const paint = () => disp.textContent = fmt(sec); paint();
+
+// Custom formatter: outputs HTML with two dot colon
+const fmt = s => {
+  const min = String(Math.floor(s/60)).padStart(2,'0');
+  const sec = String(s%60).padStart(2,'0');
+  // Colon as two dots
+  return `<span class="display-min">${min}</span>
+    <span class="dots" aria-hidden="true">
+      <span class="dots-dot"></span>
+      <span class="dots-dot"></span>
+    </span>
+    <span class="display-sec">${sec}</span>`;
+};
+
+const paint = () => {
+  disp.innerHTML = fmt(sec);
+};
+paint();
 
 /* ---------- audio ---------- */
 function ensureAudio(){ 
