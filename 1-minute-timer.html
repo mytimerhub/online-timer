@@ -33,7 +33,6 @@
     margin-bottom:1rem;
     display: inline-block;
     line-height: 1;
-    /* as tight as possible */
   }
   .display-min, .display-sec {
     display:inline-block;
@@ -136,7 +135,7 @@ let sec = DUR,
     beepOn   = true,
     gtagSent = false;
     clickLock = false;
-let audioUnlocked = false; // ← NEW
+let audioUnlocked = false;
 
 /* ---------- dom helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -160,15 +159,26 @@ paint();
 function ensureAudio(){ 
   if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 }
+
+// "Prime" audio context with a silent beep after first user action, so first real beep always works
 function unlockAudio() {
   if (audioUnlocked) return;
   ensureAudio();
-  // Try to resume on user gesture
   if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  // Play a silent beep to "unlock" on Chrome/Edge, so first beep isn't skipped
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = 1000;
+  gain.gain.value = 0.0001; // nearly silent
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.05); // very short
   audioUnlocked = true;
 }
 function beep(){
-  if(!beepOn || !audioUnlocked) return; // ← Now checks unlocked
+  if(!beepOn || !audioUnlocked) return;
   ensureAudio();
   if(audioCtx.state === 'suspended') audioCtx.resume();
   const osc  = audioCtx.createOscillator(),
@@ -194,11 +204,11 @@ function tick(){
 
 /* ---------- controls ---------- */
 function start(){
-  if(state === 'idle'){ sec = DUR; paint(); }            // reset only from idle
-  if(timer) clearInterval(timer);                        // guard double interval
+  if(state === 'idle'){ sec = DUR; paint(); }
+  if(timer) clearInterval(timer);
 
   if(!gtagSent && typeof gtag === 'function'){
-    gtag('event','timerStart',{value:'1'});              // GA4 custom event
+    gtag('event','timerStart',{value:'1'});
     gtagSent = true;
   }
 
@@ -219,7 +229,6 @@ function pause(){
 // Unlock AudioContext on *first* interaction with any main control
 function userInteractionHandler() {
   unlockAudio();
-  // Remove after first unlock
   ctrl.removeEventListener('click', userInteractionHandler);
   reset.removeEventListener('click', userInteractionHandler);
   toggle.removeEventListener('click', userInteractionHandler);
@@ -229,11 +238,11 @@ reset.addEventListener('click', userInteractionHandler, { once: true });
 toggle.addEventListener('click', userInteractionHandler, { once: true });
 
 ctrl.onclick = () => {
-  if (clickLock) return;                       
+  if (clickLock) return;
   clickLock = true; setTimeout(() => clickLock = false, 250);
   state === 'running' ? pause() : start();
 };
-  
+
 reset.onclick = () => {
   clearInterval(timer); timer = null;
   sec = DUR; paint();
