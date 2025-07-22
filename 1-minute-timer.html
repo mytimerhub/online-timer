@@ -74,7 +74,7 @@
 
   /* slider toggle */
   .sound-wrap{display:flex;flex-direction:column;align-items:center;margin-top:2rem}
-  .sound-toggle{display:flex;align-items:center;gap:.5rem}
+  .sound-toggle{display:flex;align-items:center;gap:.7rem}
   .switch{position:relative;width:46px;height:24px}
   .switch input{opacity:0;width:0;height:0}
   .slider{
@@ -87,7 +87,14 @@
   }
   input:checked + .slider{background:#34d058}
   input:checked + .slider:before{transform:translateX(22px)}
-  .state-label{font-size:.9rem;margin-top:.25rem;opacity:.85}
+  .sound-label{
+    font-size:1.22rem;
+    margin-left: .5rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    opacity:.97;
+    user-select: none;
+  }
 </style>
 </head>
 <body>
@@ -103,14 +110,12 @@
 
   <div class="sound-wrap">
     <div class="sound-toggle">
-      <span>🔕</span>
       <label class="switch" title="Play beep when timer finishes">
         <input type="checkbox" id="soundToggle" aria-label="End-of-timer beep" checked>
         <span class="slider"></span>
       </label>
-      <span>🔔</span>
+      <span id="soundState" class="sound-label">End Beep ON</span>
     </div>
-    <span id="soundState" class="state-label">End-beep ON</span>
   </div>
 
 <!-- Logic -->
@@ -251,7 +256,7 @@ reset.onclick = () => {
 };
 toggle.onchange = () => {
   beepOn = toggle.checked;
-  label.textContent = beepOn ? 'End-beep ON' : 'End-beep OFF';
+  label.textContent = beepOn ? 'End Beep ON' : 'End Beep OFF';
 };
 </script>
 </body>
