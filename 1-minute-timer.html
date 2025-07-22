@@ -5,12 +5,6 @@
 <title>1 Minute Timer – Free Online Countdown | MyTimerHub</title>
 <meta name="description" content="Start a one minute timer on any device. One click to start, pause, reset, toggle the end-beep, or browse more timers.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-55CF81T3WD"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
-  gtag('config', 'G-55CF81T3WD');
-</script>
 <style>
   :root{ --btn-w: min(45vw,160px);}
   body{
@@ -90,6 +84,32 @@
     user-select: none;
     display: block;
   }
+  .test-beep-btn {
+    margin-top: 1.1rem;
+    font-size: 1.05rem;
+    padding: .4em 1.2em;
+    border-radius: 8px;
+    border: none;
+    background: #e9e9e9;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,.11);
+    transition: background .18s;
+  }
+  .test-beep-btn:active {
+    background: #d7f6db;
+  }
+  .beep-note {
+    color:#888; font-size:.97rem; margin-top:.43rem; text-align:center; max-width:19em;
+  }
+  .desktop-note {
+    color: #888;
+    font-size: 1.04rem;
+    margin-top: 2.5rem;
+    text-align: center;
+    display: none;
+    max-width: 22em;
+    line-height: 1.5;
+  }
 </style>
 </head>
 <body>
@@ -108,15 +128,19 @@
       </label>
     </div>
     <span class="sound-label-main">End Beep</span>
+    <button class="test-beep-btn" id="testBeepBtn" type="button">Test Beep</button>
+    <div class="beep-note">
+      <b>Tip:</b> Tap "Test Beep" after enabling "End Beep" to ensure timer sound works on all browsers (Chrome/Edge requires this).
+    </div>
+  </div>
+  <div id="desktopNote" class="desktop-note">
+    Sound alert is available only on mobile devices. On desktop, timer will finish silently.
   </div>
 <script>
-(function(){
-  const p = document.getElementById('profitl-root');
-  if(p){
-    p.remove();
-    document.body.classList.remove('profitl-collapsed');
-  }
-})();
+/* ---------- mobile/desktop detection ---------- */
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
 /* ---------- core constants ---------- */
 const DUR = 1*60;
 /* ---------- state ---------- */
@@ -125,12 +149,14 @@ let sec = DUR,
     state   = 'idle',
     audioCtx = null,
     beepOn   = false, // default off
-    gtagSent = false;
-    clickLock = false;
-let audioUnlocked = false;
+    clickLock = false,
+    audioUnlocked = false;
 /* ---------- dom helpers ---------- */
 const $ = id => document.getElementById(id);
-const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'), toggle = $('soundToggle');
+const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'),
+      toggle = $('soundToggle'), testBeepBtn = $('testBeepBtn'),
+      soundWrap = document.querySelector('.sound-wrap'),
+      desktopNote = $('desktopNote');
 /* ---------- timer display with two-dot colon ---------- */
 const fmt = s => {
   const min = String(Math.floor(s/60)).padStart(2,'0');
@@ -142,18 +168,18 @@ const paint = () => { disp.innerHTML = fmt(sec); }; paint();
 function ensureAudio(){ 
   if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 }
-function unlockAudioWithClick() {
+function unlockAudioWithBeep() {
   ensureAudio();
   if (audioCtx.state === 'suspended') audioCtx.resume();
-  // Play a quick, soft click/beep
+  // Play a short, soft beep
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'sine';
-  osc.frequency.value = 1200;
-  gain.gain.value = 0.12;
+  osc.frequency.value = 1100;
+  gain.gain.value = 0.14;
   osc.connect(gain).connect(audioCtx.destination);
   osc.start();
-  osc.stop(audioCtx.currentTime + 0.055);
+  osc.stop(audioCtx.currentTime + 0.08);
   audioUnlocked = true;
 }
 function beep(){
@@ -183,12 +209,6 @@ function tick(){
 function start(){
   if(state === 'idle'){ sec = DUR; paint(); }
   if(timer) clearInterval(timer);
-  if(!gtagSent && typeof gtag === 'function'){
-    gtag('event','timerStart',{value:'1'});
-    gtagSent = true;
-  }
-  ensureAudio();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
   timer = setInterval(tick, 1000);
   state = 'running';
   ctrl.textContent = 'Pause';
@@ -198,14 +218,23 @@ function pause(){
   state = 'paused';
   ctrl.textContent = 'Resume';
 }
-/* ---------- event listeners ---------- */
-// Unlock sound on first switch ON with a click sound
-toggle.onchange = () => {
-  beepOn = toggle.checked;
-  if (beepOn && !audioUnlocked) {
-    unlockAudioWithClick();
-  }
-};
+/* ---------- event listeners & mobile/desktop logic ---------- */
+if (isMobileDevice()) {
+  // Show sound controls, enable beeps
+  soundWrap.style.display = '';
+  desktopNote.style.display = 'none';
+  toggle.onchange = () => {
+    beepOn = toggle.checked;
+  };
+  testBeepBtn.onclick = () => {
+    if (beepOn) unlockAudioWithBeep();
+  };
+} else {
+  // Hide sound controls, disable beep, show desktop note
+  soundWrap.style.display = 'none';
+  desktopNote.style.display = '';
+  beepOn = false;
+}
 ctrl.onclick = () => {
   if (clickLock) return;
   clickLock = true; setTimeout(() => clickLock = false, 250);
