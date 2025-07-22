@@ -88,22 +88,15 @@
   input:checked + .slider:before{transform:translateX(22px)}
   .sound-label-main {
     font-size:1.17rem;
-    margin-top:0.42rem;
+    margin-top:0.43rem;
     letter-spacing:0.01em;
-    font-weight: 600;
-    text-align: center;
+    font-weight:500;
+    text-align:center;
+    color: #888;
+    opacity: 0.95;
+    user-select: none;
     display: block;
   }
-  .sound-state {
-    font-size:1.18rem;
-    font-weight:600;
-    min-width: 32px;
-    text-align: center;
-    transition: color .2s, opacity .2s;
-    user-select: none;
-  }
-  .sound-state.on { color:#36b124; opacity:1; }
-  .sound-state.off{ color:#d02626; opacity:1; }
 </style>
 </head>
 <body>
@@ -119,12 +112,10 @@
 
   <div class="sound-wrap">
     <div class="sound-toggle">
-      <span id="soundStateOff" class="sound-state off">OFF</span>
       <label class="switch" title="Play beep when timer finishes">
         <input type="checkbox" id="soundToggle" aria-label="End-of-timer beep" checked>
         <span class="slider"></span>
       </label>
-      <span id="soundStateOn" class="sound-state on">ON</span>
     </div>
     <span class="sound-label-main">End Beep</span>
   </div>
@@ -155,9 +146,7 @@ let audioUnlocked = false;
 /* ---------- dom helpers ---------- */
 const $ = id => document.getElementById(id);
 const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'),
-      toggle = $('soundToggle'),
-      stateOn = $('soundStateOn'),
-      stateOff = $('soundStateOff');
+      toggle = $('soundToggle');
 
 /* ---------- timer display with two-dot colon ---------- */
 const fmt = s => {
@@ -236,22 +225,6 @@ function pause(){
 }
 
 /* ---------- event listeners ---------- */
-function updateSoundStates() {
-  if (toggle.checked) {
-    stateOn.classList.add('on');
-    stateOn.classList.remove('off');
-    stateOff.classList.remove('on');
-    stateOff.classList.add('off');
-    beepOn = true;
-  } else {
-    stateOn.classList.remove('on');
-    stateOn.classList.add('off');
-    stateOff.classList.add('on');
-    stateOff.classList.remove('off');
-    beepOn = false;
-  }
-}
-
 function userInteractionHandler() {
   unlockAudio();
   ctrl.removeEventListener('click', userInteractionHandler);
@@ -273,9 +246,9 @@ reset.onclick = () => {
   state = 'idle';
   ctrl.textContent = 'Start';
 };
-toggle.onchange = updateSoundStates;
-
-updateSoundStates();
+toggle.onchange = () => {
+  beepOn = toggle.checked;
+};
 </script>
 </body>
 </html>
