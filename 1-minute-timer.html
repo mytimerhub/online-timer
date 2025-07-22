@@ -55,7 +55,7 @@
     <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQgAAAAA////AAAAAAAAAAAAAAAAAAAA" type="audio/wav">
   </audio>
   <script>
-    const DURATION = 60;
+    const DURATION = 8;
     let seconds = DURATION, timer = null, state = 'idle', beepOn = true, clickLock = false, gtagSent = false, audioUnlocked = false;
     const $ = id => document.getElementById(id), d = $('display'), ctrl = $('ctrl'), reset = $('reset'), toggle = $('soundToggle'), label = $('soundState'), beepEl = $('beep');
     const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
