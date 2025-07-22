@@ -31,34 +31,39 @@
     font-size:clamp(4rem,20vw,8rem);
     letter-spacing:1px;
     margin-bottom:1rem;
-    /* remove flex for tightness */
     display: inline-block;
-    /* No gap, no flex! */
+    line-height: 1;
+    /* as tight as possible */
   }
   .display-min, .display-sec {
     display:inline-block;
     vertical-align:middle;
-    margin:0; /* No margin, as tight as possible */
+    margin:0;
     padding:0;
+    line-height:1;
   }
   .dots {
     display: inline-block;
-    vertical-align: middle;
-    width: 0.32em;
+    width: 0.23em;
     height: 1em;
-    margin: 0 -0.04em; /* Negative margin pulls closer to digits */
+    vertical-align: middle;
     position: relative;
+    margin: 0 -0.02em;
   }
   .dots-dot {
-    width: 0.10em;
-    height: 0.10em;
-    background: #333;
-    border-radius: 50%;
-    display: block;
-    position: relative;
+    position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    margin: 0.08em 0;
+    width: 0.09em;
+    height: 0.09em;
+    background: #222;
+    border-radius: 50%;
+  }
+  .dots-dot:first-child {
+    top: 36%;
+  }
+  .dots-dot:last-child {
+    top: 62%;
   }
   .row{display:flex;gap:.8rem}
   button{
@@ -142,7 +147,7 @@ const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'),
 const fmt = s => {
   const min = String(Math.floor(s/60)).padStart(2,'0');
   const sec = String(s%60).padStart(2,'0');
-  // Colon as two dots, as tight as possible
+  // Colon as two dots, tightly spaced and centered
   return `<span class="display-min">${min}</span><span class="dots" aria-hidden="true"><span class="dots-dot"></span><span class="dots-dot"></span></span><span class="display-sec">${sec}</span>`;
 };
 
