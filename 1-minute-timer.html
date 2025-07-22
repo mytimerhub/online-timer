@@ -31,30 +31,31 @@
     font-size:clamp(4rem,20vw,8rem);
     letter-spacing:1px;
     margin-bottom:1rem;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:0.3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0; /* No gap between elements! */
   }
   .display-min, .display-sec {
     display:inline-block;
+    /* Ensure tight spacing */
   }
   .dots {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 0.6em;
+    width: 0.35em;
     height: 1em;
-    margin: 0 0.05em;
+    margin: 0 0.07em;
     position: relative;
   }
   .dots-dot {
-    width: 0.18em;
-    height: 0.18em;
+    width: 0.11em;
+    height: 0.11em;
     background: #333;
     border-radius: 50%;
-    margin: 0.13em 0;
+    margin: 0.05em 0 0.05em 0;
     display: block;
   }
   .row{display:flex;gap:.8rem}
@@ -139,13 +140,8 @@ const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'),
 const fmt = s => {
   const min = String(Math.floor(s/60)).padStart(2,'0');
   const sec = String(s%60).padStart(2,'0');
-  // Colon as two dots
-  return `<span class="display-min">${min}</span>
-    <span class="dots" aria-hidden="true">
-      <span class="dots-dot"></span>
-      <span class="dots-dot"></span>
-    </span>
-    <span class="display-sec">${sec}</span>`;
+  // Colon as two dots, tightly spaced
+  return `<span class="display-min">${min}</span><span class="dots" aria-hidden="true"><span class="dots-dot"></span><span class="dots-dot"></span></span><span class="display-sec">${sec}</span>`;
 };
 
 const paint = () => {
