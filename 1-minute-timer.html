@@ -8,7 +8,7 @@
 <meta name="description" content="Start a one minute timer on any device. One click to start, pause, reset, toggle the end-beep, or browse more timers.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- 🟡 Google Analytics 4 – replace G-XXXXXXX with your Measurement ID -->
+<!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-55CF81T3WD"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -16,9 +16,8 @@
   gtag('config', 'G-55CF81T3WD');
 </script>
 
-<!-- Styles -->
 <style>
-  :root{ --btn-w: min(45vw,160px); }
+  :root{ --btn-w: min(45vw,160px);}
   body{
     font-family:sans-serif; color:#222;
     display:flex; flex-direction:column; align-items:center;
@@ -58,12 +57,8 @@
     background: #222;
     border-radius: 50%;
   }
-  .dots-dot:first-child {
-    top: 36%;
-  }
-  .dots-dot:last-child {
-    top: 62%;
-  }
+  .dots-dot:first-child { top: 36%; }
+  .dots-dot:last-child { top: 62%; }
   .row{display:flex;gap:.8rem}
   button{
     width:var(--btn-w); padding:1rem 0; font-size:1.25rem; border:none;
@@ -72,10 +67,14 @@
   }
   button:focus-visible{outline:3px solid #555; outline-offset:2px}
 
-  /* slider toggle */
-  .sound-wrap{display:flex;flex-direction:column;align-items:center;margin-top:2rem}
-  .sound-toggle{display:flex;align-items:center;gap:.7rem}
-  .switch{position:relative;width:46px;height:24px}
+  /* Sound Toggle Styling */
+  .sound-wrap{
+    display:flex; flex-direction:column; align-items:center; margin-top:2rem;
+  }
+  .sound-toggle{
+    display:flex; align-items:center; justify-content:center; gap:.8rem;
+  }
+  .sound-toggle .switch{position:relative;width:46px;height:24px}
   .switch input{opacity:0;width:0;height:0}
   .slider{
     position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
@@ -87,14 +86,24 @@
   }
   input:checked + .slider{background:#34d058}
   input:checked + .slider:before{transform:translateX(22px)}
-  .sound-label{
-    font-size:1.22rem;
-    margin-left: .5rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    opacity:.97;
+  .sound-label-main {
+    font-size:1.17rem;
+    margin-top:0.42rem;
+    letter-spacing:0.01em;
+    font-weight: 600;
+    text-align: center;
+    display: block;
+  }
+  .sound-state {
+    font-size:1.18rem;
+    font-weight:600;
+    min-width: 32px;
+    text-align: center;
+    transition: color .2s, opacity .2s;
     user-select: none;
   }
+  .sound-state.on { color:#36b124; opacity:1; }
+  .sound-state.off{ color:#d02626; opacity:1; }
 </style>
 </head>
 <body>
@@ -110,15 +119,16 @@
 
   <div class="sound-wrap">
     <div class="sound-toggle">
+      <span id="soundStateOff" class="sound-state off">OFF</span>
       <label class="switch" title="Play beep when timer finishes">
         <input type="checkbox" id="soundToggle" aria-label="End-of-timer beep" checked>
         <span class="slider"></span>
       </label>
-      <span id="soundState" class="sound-label">End Beep ON</span>
+      <span id="soundStateOn" class="sound-state on">ON</span>
     </div>
+    <span class="sound-label-main">End Beep</span>
   </div>
 
-<!-- Logic -->
 <script>
 // Remove Profitl overlay if present
 (function(){
@@ -130,12 +140,12 @@
 })();
 
 /* ---------- core constants ---------- */
-const DUR = 1*60;                 // seconds per cycle
+const DUR = 1*60;
 
 /* ---------- state ---------- */
 let sec = DUR,
     timer   = null,
-    state   = 'idle',               // idle | running | paused
+    state   = 'idle',
     audioCtx = null,
     beepOn   = true,
     gtagSent = false;
@@ -145,41 +155,36 @@ let audioUnlocked = false;
 /* ---------- dom helpers ---------- */
 const $ = id => document.getElementById(id);
 const disp = $('display'), ctrl = $('ctrl'), reset = $('reset'),
-      toggle = $('soundToggle'), label = $('soundState');
+      toggle = $('soundToggle'),
+      stateOn = $('soundStateOn'),
+      stateOff = $('soundStateOff');
 
-// Custom formatter: outputs HTML with two dot colon
+/* ---------- timer display with two-dot colon ---------- */
 const fmt = s => {
   const min = String(Math.floor(s/60)).padStart(2,'0');
   const sec = String(s%60).padStart(2,'0');
-  // Colon as two dots, tightly spaced and centered
   return `<span class="display-min">${min}</span><span class="dots" aria-hidden="true"><span class="dots-dot"></span><span class="dots-dot"></span></span><span class="display-sec">${sec}</span>`;
 };
 
-const paint = () => {
-  disp.innerHTML = fmt(sec);
-};
-paint();
+const paint = () => { disp.innerHTML = fmt(sec); }; paint();
 
 /* ---------- audio ---------- */
 function ensureAudio(){ 
   if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 }
-
-// "Prime" audio context with a silent beep after first user action, so first real beep always works
 function unlockAudio() {
   if (audioUnlocked) return;
   ensureAudio();
   if (audioCtx.state === 'suspended') audioCtx.resume();
-
   // Play a silent beep to "unlock" on Chrome/Edge, so first beep isn't skipped
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'sine';
   osc.frequency.value = 1000;
-  gain.gain.value = 0.0001; // nearly silent
+  gain.gain.value = 0.0001;
   osc.connect(gain).connect(audioCtx.destination);
   osc.start();
-  osc.stop(audioCtx.currentTime + 0.05); // very short
+  osc.stop(audioCtx.currentTime + 0.05);
   audioUnlocked = true;
 }
 function beep(){
@@ -231,7 +236,22 @@ function pause(){
 }
 
 /* ---------- event listeners ---------- */
-// Unlock AudioContext on *first* interaction with any main control
+function updateSoundStates() {
+  if (toggle.checked) {
+    stateOn.classList.add('on');
+    stateOn.classList.remove('off');
+    stateOff.classList.remove('on');
+    stateOff.classList.add('off');
+    beepOn = true;
+  } else {
+    stateOn.classList.remove('on');
+    stateOn.classList.add('off');
+    stateOff.classList.add('on');
+    stateOff.classList.remove('off');
+    beepOn = false;
+  }
+}
+
 function userInteractionHandler() {
   unlockAudio();
   ctrl.removeEventListener('click', userInteractionHandler);
@@ -247,17 +267,15 @@ ctrl.onclick = () => {
   clickLock = true; setTimeout(() => clickLock = false, 250);
   state === 'running' ? pause() : start();
 };
-
 reset.onclick = () => {
   clearInterval(timer); timer = null;
   sec = DUR; paint();
   state = 'idle';
   ctrl.textContent = 'Start';
 };
-toggle.onchange = () => {
-  beepOn = toggle.checked;
-  label.textContent = beepOn ? 'End Beep ON' : 'End Beep OFF';
-};
+toggle.onchange = updateSoundStates;
+
+updateSoundStates();
 </script>
 </body>
 </html>
