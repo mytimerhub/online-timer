@@ -99,6 +99,7 @@ let sec = DUR,
     beepOn   = true,
     gtagSent = false;
     clickLock = false;
+let audioUnlocked = false; // ← NEW
 
 /* ---------- dom helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -108,9 +109,18 @@ const fmt  = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).pa
 const paint = () => disp.textContent = fmt(sec); paint();
 
 /* ---------- audio ---------- */
-function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+function ensureAudio(){ 
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+}
+function unlockAudio() {
+  if (audioUnlocked) return;
+  ensureAudio();
+  // Try to resume on user gesture
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  audioUnlocked = true;
+}
 function beep(){
-  if(!beepOn) return;
+  if(!beepOn || !audioUnlocked) return; // ← Now checks unlocked
   ensureAudio();
   if(audioCtx.state === 'suspended') audioCtx.resume();
   const osc  = audioCtx.createOscillator(),
@@ -158,8 +168,20 @@ function pause(){
 }
 
 /* ---------- event listeners ---------- */
+// Unlock AudioContext on *first* interaction with any main control
+function userInteractionHandler() {
+  unlockAudio();
+  // Remove after first unlock
+  ctrl.removeEventListener('click', userInteractionHandler);
+  reset.removeEventListener('click', userInteractionHandler);
+  toggle.removeEventListener('click', userInteractionHandler);
+}
+ctrl.addEventListener('click', userInteractionHandler, { once: true });
+reset.addEventListener('click', userInteractionHandler, { once: true });
+toggle.addEventListener('click', userInteractionHandler, { once: true });
+
 ctrl.onclick = () => {
-  if (clickLock) return;                       // ← NEW guard
+  if (clickLock) return;                       
   clickLock = true; setTimeout(() => clickLock = false, 250);
   state === 'running' ? pause() : start();
 };
